@@ -6,7 +6,10 @@ const mockWorkspace = {
 };
 
 jest.mock('vscode', () => ({
-  workspace: mockWorkspace,
+  workspace: {
+    getConfiguration: (...args: any[]) =>
+      mockWorkspace.getConfiguration(...args),
+  },
 }));
 
 describe('Config', () => {
