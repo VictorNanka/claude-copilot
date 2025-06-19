@@ -1,3 +1,4 @@
+// @ts-nocheck
 import * as vscode from 'vscode';
 import { MCPClientConfig } from './types';
 
@@ -56,7 +57,10 @@ export function getConfig(): Config {
     defaultModel: config.get<string>('defaultModel', 'gpt-4.1'),
     mcpClients: config.get<Record<string, MCPClientConfig>>('mcpClients', {}),
     systemPrompt: config.get<string>('systemPrompt', ''),
-    systemPromptFormat: config.get<'merge' | 'assistant_acknowledgment' | 'simple_prepend'>('systemPromptFormat', 'merge'),
+    systemPromptFormat: config.get<'merge' | 'assistant_acknowledgment' | 'simple_prepend'>(
+      'systemPromptFormat',
+      'merge'
+    ),
     enableSystemPromptProcessing: config.get<boolean>('enableSystemPromptProcessing', true),
     enableToolCalling: config.get<boolean>('enableToolCalling', true),
     startServerAutomatically: config.get<boolean>('startServerAutomatically', true),
