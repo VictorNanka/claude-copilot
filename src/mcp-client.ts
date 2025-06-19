@@ -2,11 +2,16 @@ import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 import { CallToolRequest, CallToolResult, ListToolsRequest, Tool } from '@modelcontextprotocol/sdk/types.js';
 import { logger } from './logger';
+import { MCPClientConfig, MCPTool, MCPCallResult } from './types';
 
-export interface MCPClientConfig {
-    command: string;
-    args?: string[];
-    env?: Record<string, string>;
+// Type for MCP SDK response format
+interface MCPListToolsResponse {
+    tools: Tool[];
+}
+
+interface MCPRequest {
+    method: string;
+    params?: Record<string, unknown>;
 }
 
 export class MCPManager {
@@ -37,32 +42,35 @@ export class MCPManager {
             await this.loadToolsFromClient(name, client);
             
             logger.info(`MCP client '${name}' connected successfully`);
-        } catch (error) {
-            logger.error(`Failed to connect MCP client '${name}':`, error);
+        } catch (error: unknown) {
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            logger.error(`Failed to connect MCP client '${name}': ${errorMessage}`);
             throw error;
         }
     }
 
     private async loadToolsFromClient(clientName: string, client: Client): Promise<void> {
         try {
+            const request: MCPRequest = { method: 'tools/list' };
             const response = await client.request(
-                { method: 'tools/list' } as ListToolsRequest,
-                {} as any
-            ) as any;
+                request as ListToolsRequest,
+                {}
+            ) as MCPListToolsResponse;
 
-            if (response.tools) {
+            if (response.tools && Array.isArray(response.tools)) {
                 for (const tool of response.tools) {
                     const toolKey = `${clientName}:${tool.name}`;
                     this.tools.set(toolKey, tool);
                     logger.debug(`Loaded tool: ${toolKey}`);
                 }
             }
-        } catch (error) {
-            logger.error(`Failed to load tools from client '${clientName}':`, error);
+        } catch (error: unknown) {
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            logger.error(`Failed to load tools from client '${clientName}': ${errorMessage}`);
         }
     }
 
-    async callTool(toolName: string, parameters: any): Promise<CallToolResult> {
+    async callTool(toolName: string, parameters: Record<string, unknown>): Promise<MCPCallResult> {
         // Find which client has this tool
         let clientName: string | undefined;
         let actualToolName: string = '';
@@ -89,27 +97,44 @@ export class MCPManager {
         }
 
         try {
+            const request: MCPRequest = {
+                method: 'tools/call',
+                params: {
+                    name: actualToolName,
+                    arguments: parameters
+                }
+            };
             const result = await client.request(
-                {
-                    method: 'tools/call',
-                    params: {
-                        name: actualToolName,
-                        arguments: parameters
-                    }
-                } as CallToolRequest,
-                {} as any
+                request as CallToolRequest,
+                {}
             ) as CallToolResult;
 
             logger.debug(`Tool call result for '${toolName}':`, result);
-            return result;
-        } catch (error) {
-            logger.error(`Tool call failed for '${toolName}':`, error);
+            
+            // Convert to our MCPCallResult format
+            const mcpResult: MCPCallResult = {
+                content: result.content || [],
+                isError: result.isError || false
+            };
+            
+            return mcpResult;
+        } catch (error: unknown) {
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            logger.error(`Tool call failed for '${toolName}': ${errorMessage}`);
             throw error;
         }
     }
 
-    getAvailableTools(): Tool[] {
-        return Array.from(this.tools.values());
+    getAvailableTools(): MCPTool[] {
+        return Array.from(this.tools.values()).map(tool => ({
+            name: tool.name,
+            description: tool.description || `MCP tool: ${tool.name}`,
+            inputSchema: tool.inputSchema || {
+                type: "object",
+                properties: {},
+                required: []
+            }
+        }));
     }
 
     async disconnect(): Promise<void> {
@@ -117,8 +142,9 @@ export class MCPManager {
             try {
                 await client.close();
                 logger.info(`MCP client '${name}' disconnected`);
-            } catch (error) {
-                logger.error(`Error disconnecting MCP client '${name}':`, error);
+            } catch (error: unknown) {
+                const errorMessage = error instanceof Error ? error.message : String(error);
+                logger.error(`Error disconnecting MCP client '${name}': ${errorMessage}`);
             }
         }
         this.clients.clear();

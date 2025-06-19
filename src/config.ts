@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { MCPClientConfig } from './mcp-client';
+import { MCPClientConfig } from './types';
 
 export interface Config {
   /**
@@ -36,6 +36,16 @@ export interface Config {
    * Enable intelligent system prompt processing
    */
   enableSystemPromptProcessing: boolean;
+
+  /**
+   * Enable tool calling support
+   */
+  enableToolCalling: boolean;
+
+  /**
+   * Start server automatically
+   */
+  startServerAutomatically: boolean;
 }
 
 export function getConfig(): Config {
@@ -48,5 +58,7 @@ export function getConfig(): Config {
     systemPrompt: config.get<string>('systemPrompt', ''),
     systemPromptFormat: config.get<'merge' | 'assistant_acknowledgment' | 'simple_prepend'>('systemPromptFormat', 'merge'),
     enableSystemPromptProcessing: config.get<boolean>('enableSystemPromptProcessing', true),
+    enableToolCalling: config.get<boolean>('enableToolCalling', true),
+    startServerAutomatically: config.get<boolean>('startServerAutomatically', true),
   };
 }

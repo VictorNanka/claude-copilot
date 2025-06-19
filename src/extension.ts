@@ -1,25 +1,32 @@
 import * as vscode from 'vscode';
-import { NewServer, Server } from './server';
+import { NewServer } from './server';
 import { getConfig } from './config';
 import { logger } from './logger';
+import { claudeToolSignatures } from './claudeTools';
+import {
+    ServerInstance,
+    ToolSignature,
+    MCPCallResult,
+    ExtensionContext,
+    ToolExecutionError
+} from './types';
 
 // Create output channel for debugging
 const outputChannel = vscode.window.createOutputChannel("HTTP LM API");
-import { claudeToolSignatures } from './claudeTools';
 
-let server: Server;
-let extensionContext: vscode.ExtensionContext;
+let server: ServerInstance;
+let extensionContext: ExtensionContext;
 
 // Global registry for registered Claude Code tools
 const dummyRegistry = new Set<string>();
 
 // Get extension context for dynamic registration
-export function getExtensionContext(): vscode.ExtensionContext | undefined {
+export function getExtensionContext(): ExtensionContext | undefined {
 	return extensionContext;
 }
 
 // Add tool to runtime registry
-export function addDiscoveredTool(toolSignature: any): boolean {
+export function addDiscoveredTool(toolSignature: ToolSignature): boolean {
 	try {
 		// Check if tool already exists
 		const existingIndex = claudeToolSignatures.findIndex(t => t.name === toolSignature.name);
@@ -31,14 +38,19 @@ export function addDiscoveredTool(toolSignature: any): boolean {
 			claudeToolSignatures.push(toolSignature);
 		}
 		return true;
-	} catch (error) {
-		logToOutput(`❌ Failed to add discovered tool ${toolSignature.name}: ${error}`);
+	} catch (error: unknown) {
+		const errorMessage = error instanceof Error ? error.message : String(error);
+		logToOutput(`❌ Failed to add discovered tool ${toolSignature.name}: ${errorMessage}`);
 		return false;
 	}
 }
 
 // Register MCP tool dynamically
-export function registerMCPTool(toolName: string, toolSchema: any, mcpCallHandler: (name: string, params: any) => Promise<any>): boolean {
+export function registerMCPTool(
+	toolName: string, 
+	toolSchema: ToolSignature, 
+	mcpCallHandler: (name: string, params: Record<string, unknown>) => Promise<MCPCallResult>
+): boolean {
 	const context = getExtensionContext();
 	if (!context) {
 		logToOutput(`❌ Extension context not available for MCP tool registration: ${toolName}`);
@@ -93,13 +105,13 @@ export function registerMCPTool(toolName: string, toolSchema: any, mcpCallHandle
 }
 
 // Enhanced logging function
-function logToOutput(message: string) {
+function logToOutput(message: string): void {
 	console.log(message);
 	outputChannel.appendLine(`[${new Date().toISOString()}] ${message}`);
 }
 
 // Dynamic tool registration function
-export function registerToolDynamically(toolName: string, context: vscode.ExtensionContext): boolean {
+export function registerToolDynamically(toolName: string, context: ExtensionContext): boolean {
 	const toolSig = claudeToolSignatures.find(t => t.name === toolName);
 	if (!toolSig) {
 		logToOutput(`❌ Tool signature not found for: ${toolName}`);
@@ -124,14 +136,15 @@ export function registerToolDynamically(toolName: string, context: vscode.Extens
 		dummyRegistry.add(toolName);
 		logToOutput(`🔧 Dynamically registered tool: ${toolName}`);
 		return true;
-	} catch (error) {
-		logToOutput(`❌ Failed to dynamically register tool ${toolName}: ${error}`);
+	} catch (error: unknown) {
+		const errorMessage = error instanceof Error ? error.message : String(error);
+		logToOutput(`❌ Failed to dynamically register tool ${toolName}: ${errorMessage}`);
 		return false;
 	}
 }
 
 
-export async function activate(context: vscode.ExtensionContext) {
+export async function activate(context: ExtensionContext): Promise<void> {
 	extensionContext = context;
 	logToOutput("🚀 HTTP LM API Extension activating...");
 	
@@ -165,9 +178,10 @@ export async function activate(context: vscode.ExtensionContext) {
 		try {
 			logToOutput("🌐 Starting HTTP LM API server automatically...");
 			await server.start();
-		} catch (error: any) {
-			logToOutput(`❌ Failed to start server: ${error}`);
-			vscode.window.showErrorMessage(`Failed to start LM API server: ${error}`);
+		} catch (error: unknown) {
+			const errorMessage = error instanceof Error ? error.message : String(error);
+			logToOutput(`❌ Failed to start server: ${errorMessage}`);
+			vscode.window.showErrorMessage(`Failed to start LM API server: ${errorMessage}`);
 		}
 	} else {
 		logToOutput("⏸️ Auto-start disabled, server not started");
@@ -176,7 +190,7 @@ export async function activate(context: vscode.ExtensionContext) {
 }
 
 // This method is called when your extension is deactivated
-export async function deactivate() {
+export async function deactivate(): Promise<void> {
 	console.log("deactivation started");
 	
 	if (!server) {
@@ -190,7 +204,7 @@ export async function deactivate() {
 }
 
 // Register all 16 Claude Code official tools as empty stubs
-function registerClaudeCodeTools(context: vscode.ExtensionContext) {
+function registerClaudeCodeTools(context: ExtensionContext): void {
 	logToOutput(`🚀 Registering ${claudeToolSignatures.length} Claude Code official tools...`);
 	
 	for (const toolSig of claudeToolSignatures) {
@@ -207,8 +221,9 @@ function registerClaudeCodeTools(context: vscode.ExtensionContext) {
 				context.subscriptions.push(disposable);
 				dummyRegistry.add(toolSig.name);
 				logToOutput(`✅ Registered Claude Code tool: ${toolSig.name}`);
-			} catch (error) {
-				logToOutput(`❌ Failed to register tool ${toolSig.name}: ${error}`);
+			} catch (error: unknown) {
+				const errorMessage = error instanceof Error ? error.message : String(error);
+				logToOutput(`❌ Failed to register tool ${toolSig.name}: ${errorMessage}`);
 			}
 		}
 	}

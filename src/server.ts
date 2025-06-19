@@ -2,23 +2,36 @@ import * as vscode from "vscode";
 import { Hono } from "hono";
 import { stream } from "hono/streaming";
 import { logger } from "hono/logger";
+import { exec } from 'child_process';
 
 import { Config } from "./config";
 import { logger as winstonLogger } from "./logger";
 import { MCPManager } from "./mcp-client";
 import { claudeToolSignatures } from "./claudeTools";
 import { getExtensionContext, registerToolDynamically, addDiscoveredTool, registerMCPTool } from "./extension";
+import {
+    OpenAIMessage,
+    OpenAIChatCompletionRequest,
+    OpenAIChatCompletionResponse,
+    AnthropicMessage,
+    AnthropicMessagesRequest,
+    AnthropicMessagesResponse,
+    ToolSignature,
+    ToolDiscoveryResult,
+    ModelInfo,
+    ServerInstance,
+    ProcessedMessages,
+    SystemPromptFormat,
+    APIError,
+    ToolExecutionError,
+    JSONSchema
+} from "./types";
 
-export type Server = {
-    start: () => void;
-    stop: () => void;
-    updateConfig: (config: Config) => void;
-};
 
-export function NewServer(config: Config): Server {
+export function NewServer(config: Config): ServerInstance {
     const mcpManager = new MCPManager();
     const server = newHonoServer(() => config, mcpManager);
-    let startedServer: any;
+    let startedServer: { stop(): void } | undefined;
 
     // Initialize MCP clients
     initializeMCPClients(mcpManager, config);
@@ -59,22 +72,24 @@ export function NewServer(config: Config): Server {
 async function findModelWithFallback(
     requestedModel: string,
     defaultModel: string
-) {
+): Promise<vscode.LanguageModelChat | null> {
     try {
         const models = await vscode.lm.selectChatModels({ id: requestedModel });
         const model = models.find((m) => m.id === requestedModel);
         if (model) return model;
-    } catch (error) {
+    } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
         winstonLogger.warn(
-            `Model ${requestedModel} not found, trying default: ${defaultModel}`
+            `Model ${requestedModel} not found, trying default: ${defaultModel}. Error: ${errorMessage}`
         );
     }
 
     try {
         const models = await vscode.lm.selectChatModels({ id: defaultModel });
         return models.find((m) => m.id === defaultModel);
-    } catch (error) {
-        winstonLogger.error(`Default model ${defaultModel} also not found`);
+    } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        winstonLogger.error(`Default model ${defaultModel} also not found. Error: ${errorMessage}`);
         return null;
     }
 }
@@ -94,8 +109,9 @@ async function initializeMCPClients(
 
             // Auto-register MCP tools to VS Code LM
             await registerMCPToolsToVSCode(mcpManager, name);
-        } catch (error) {
-            winstonLogger.error(`Failed to initialize MCP client '${name}':`, error);
+        } catch (error: unknown) {
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            winstonLogger.error(`Failed to initialize MCP client '${name}': ${errorMessage}`);
         }
     }
 }
@@ -120,13 +136,14 @@ async function registerMCPToolsToVSCode(mcpManager: MCPManager, clientName?: str
         };
 
         // Create MCP call handler that routes to the correct client
-        const mcpCallHandler = async (name: string, params: any) => {
+        const mcpCallHandler = async (name: string, params: Record<string, unknown>) => {
             try {
                 const result = await mcpManager.callTool(tool.name, params);
                 winstonLogger.info(`MCP tool ${name} executed successfully`);
                 return result;
-            } catch (error) {
-                winstonLogger.error(`MCP tool ${name} execution failed:`, error);
+            } catch (error: unknown) {
+                const errorMessage = error instanceof Error ? error.message : String(error);
+                winstonLogger.error(`MCP tool ${name} execution failed: ${errorMessage}`);
                 throw error;
             }
         };
@@ -140,23 +157,27 @@ async function registerMCPToolsToVSCode(mcpManager: MCPManager, clientName?: str
 }
 
 // Intelligent system prompt processing for VS Code LM API
-function processSystemPrompts(messages: any[], config: Config): any[] {
+function processSystemPrompts(messages: OpenAIMessage[] | AnthropicMessage[], config: Config): ProcessedMessages {
     if (!config.enableSystemPromptProcessing) {
         // Fallback to simple conversion for backward compatibility
-        return messages.map((message: any) => {
-            if (message.role === "system") {
-                return { ...message, role: "user" };
+        const processedMessages = messages.map((message) => {
+            if ('role' in message && message.role === "system") {
+                return { ...message, role: "user" as const };
             }
             return message;
         });
+        return {
+            messages: processedMessages,
+            hasSystemPrompt: false
+        };
     }
 
-    const systemMessages: any[] = [];
-    const nonSystemMessages: any[] = [];
+    const systemMessages: Array<OpenAIMessage | AnthropicMessage> = [];
+    const nonSystemMessages: Array<OpenAIMessage | AnthropicMessage> = [];
     
     // Separate system and non-system messages
     messages.forEach(message => {
-        if (message.role === "system") {
+        if ('role' in message && message.role === "system") {
             systemMessages.push(message);
         } else {
             nonSystemMessages.push(message);
@@ -179,19 +200,28 @@ function processSystemPrompts(messages: any[], config: Config): any[] {
 
     // If no system content, return original messages (except convert system to user for compatibility)
     if (!allSystemContent.trim()) {
-        return messages.map((message: any) => {
-            if (message.role === "system") {
-                return { ...message, role: "user" };
+        const processedMessages = messages.map((message) => {
+            if ('role' in message && message.role === "system") {
+                return { ...message, role: "user" as const };
             }
             return message;
         });
+        return {
+            messages: processedMessages,
+            hasSystemPrompt: false
+        };
     }
 
     // Apply system prompt processing based on format setting
-    return applySystemPromptFormat(nonSystemMessages, allSystemContent.trim(), config.systemPromptFormat);
+    const processedMessages = applySystemPromptFormat(nonSystemMessages, allSystemContent.trim(), config.systemPromptFormat);
+    return {
+        messages: processedMessages,
+        hasSystemPrompt: true,
+        systemContent: allSystemContent.trim()
+    };
 }
 
-function applySystemPromptFormat(messages: any[], systemContent: string, format: string): any[] {
+function applySystemPromptFormat(messages: Array<OpenAIMessage | AnthropicMessage>, systemContent: string, format: SystemPromptFormat): Array<OpenAIMessage | AnthropicMessage> {
     if (messages.length === 0) {
         // If no messages, create a user message with system content
         return [{
@@ -256,7 +286,7 @@ function applySystemPromptFormat(messages: any[], systemContent: string, format:
     }
 }
 
-function formatSystemPrompt(systemContent: string, userContent: string, format: string): string {
+function formatSystemPrompt(systemContent: string, userContent: string, format: SystemPromptFormat): string {
     switch (format) {
         case 'merge':
             if (!userContent.trim()) {
@@ -276,9 +306,9 @@ function formatSystemPrompt(systemContent: string, userContent: string, format: 
 }
 
 function convertMessagesToVSCode(
-    messages: any[]
+    messages: Array<OpenAIMessage | AnthropicMessage>
 ): vscode.LanguageModelChatMessage[] {
-    return messages.map((message: any) => {
+    return messages.map((message) => {
         const role =
             message.role === "assistant"
                 ? vscode.LanguageModelChatMessageRole.Assistant
@@ -286,10 +316,15 @@ function convertMessagesToVSCode(
         let content: string | Array<vscode.LanguageModelTextPart>;
         if (Array.isArray(message.content)) {
             content = message.content.map(
-                (part: any) => new vscode.LanguageModelTextPart(part.text || "")
+                (part) => {
+                    if (typeof part === 'object' && part !== null && 'text' in part) {
+                        return new vscode.LanguageModelTextPart(part.text || "");
+                    }
+                    return new vscode.LanguageModelTextPart(String(part));
+                }
             );
         } else {
-            content = message.content;
+            content = message.content || "";
         }
         return new vscode.LanguageModelChatMessage(role, content);
     });
@@ -305,7 +340,7 @@ function createErrorResponse(
     message: string,
     statusCode: number = 500,
     type: string = "internal_error"
-) {
+): { error: { type: string; message: string } } {
     return {
         error: {
             type,
@@ -314,13 +349,13 @@ function createErrorResponse(
     };
 }
 
-async function getModelsResponse() {
+async function getModelsResponse(): Promise<ModelInfo[]> {
     const models = await vscode.lm.selectChatModels();
-    return models.map((model) => ({
+    return models.map((model): ModelInfo => ({
         id: model.id,
         object: "model",
+        created: Math.floor(Date.now() / 1000),
         owned_by: "user",
-        permission: [],
     }));
 }
 
@@ -383,7 +418,7 @@ async function ensureToolsRegistered(toolNames: string[], mcpManager: MCPManager
                 parameters: mcpTool.inputSchema || { type: "object", properties: {}, required: [] }
             };
 
-            const mcpCallHandler = async (name: string, params: any) => {
+            const mcpCallHandler = async (name: string, params: Record<string, unknown>) => {
                 return await mcpManager.callTool(mcpTool.name, params);
             };
 
@@ -479,14 +514,15 @@ async function executeStreamWithRetry(contextId: string, maxRetries: number): Pr
 
         await processStreamChunks(chatResponse, context.onText, context.onToolCall, retryableOnToolResult);
 
-    } catch (error) {
-        winstonLogger.error(`Stream execution failed for context ${contextId}:`, error);
+    } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        winstonLogger.error(`Stream execution failed for context ${contextId}: ${errorMessage}`);
         throw error;
     }
 }
 
 // Function to dynamically discover tool definition from multiple sources
-async function discoverToolDefinition(toolName: string): Promise<any | null> {
+async function discoverToolDefinition(toolName: string): Promise<ToolSignature | null> {
     try {
         // Strategy 1: Try common tool patterns first
         const commonTool = tryCommonToolPatterns(toolName);
@@ -496,8 +532,7 @@ async function discoverToolDefinition(toolName: string): Promise<any | null> {
         }
 
         // Strategy 2: Try to get tool definition by calling Claude Code CLI
-        const { exec } = require('child_process');
-        return new Promise((resolve) => {
+        return new Promise<ToolSignature | null>((resolve) => {
             // Try multiple CLI approaches
             const commands = [
                 `claude-code --help ${toolName}`,
@@ -507,29 +542,35 @@ async function discoverToolDefinition(toolName: string): Promise<any | null> {
 
             tryCommandSequentially(commands, 0, resolve, toolName);
         });
-    } catch (error) {
-        winstonLogger.error(`Error discovering tool ${toolName}:`, error);
+    } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        winstonLogger.error(`Error discovering tool ${toolName}: ${errorMessage}`);
         return null;
     }
 }
 
 // Try commands sequentially until one succeeds
-function tryCommandSequentially(commands: string[], index: number, resolve: Function, toolName: string) {
+function tryCommandSequentially(
+    commands: string[], 
+    index: number, 
+    resolve: (value: ToolSignature | null) => void, 
+    toolName: string
+): void {
     if (index >= commands.length) {
         resolve(null);
         return;
     }
 
-    const { exec } = require('child_process');
-    exec(`${commands[index]} 2>/dev/null`, (error: any, stdout: string) => {
+    exec(`${commands[index]} 2>/dev/null`, (error: Error | null, stdout: string) => {
         if (!error && stdout.trim()) {
             try {
                 const toolDef = parseToolFromHelpOutput(toolName, stdout);
                 winstonLogger.info(`🔧 Discovered tool definition for ${toolName} using: ${commands[index]}`);
                 resolve(toolDef);
                 return;
-            } catch (parseError) {
+            } catch (parseError: unknown) {
                 // Continue to next command
+                winstonLogger.debug(`Failed to parse tool help for ${toolName}: ${parseError}`);
             }
         }
 
@@ -539,8 +580,8 @@ function tryCommandSequentially(commands: string[], index: number, resolve: Func
 }
 
 // Try to match common tool patterns
-function tryCommonToolPatterns(toolName: string): any | null {
-    const commonPatterns: { [key: string]: any } = {
+function tryCommonToolPatterns(toolName: string): ToolSignature | null {
+    const commonPatterns: { [key: string]: ToolSignature } = {
         // File operations
         'cat': { name: 'cat', description: 'Display file contents', parameters: { type: 'object', properties: { file: { type: 'string' } }, required: ['file'] } },
         'ls': { name: 'ls', description: 'List directory contents', parameters: { type: 'object', properties: { path: { type: 'string' } } } },
@@ -578,7 +619,7 @@ function tryCommonToolPatterns(toolName: string): any | null {
 }
 
 // Simple parser for tool help output (would need more sophisticated implementation)
-function parseToolFromHelpOutput(toolName: string, helpText: string): any {
+function parseToolFromHelpOutput(toolName: string, helpText: string): ToolSignature {
     // For now, return a basic schema - in reality would parse the help text
     return {
         name: toolName,
@@ -632,7 +673,7 @@ async function processStreamChunks(
                     );
 
                     await onToolResult(chunk.callId || "unknown", chunk.name, toolResult);
-                } catch (error) {
+                } catch (error: unknown) {
                     winstonLogger.error(
                         `Tool invocation failed for ${chunk.name}:`,
                         error
@@ -710,12 +751,12 @@ function newHonoServer(getConfig: () => Config, mcpManager: MCPManager) {
                 },
             })),
             // MCP tools
-            ...mcpTools.map((tool: any) => ({
+            ...mcpTools.map((tool) => ({
                 type: "function",
                 function: {
                     name: tool.name,
                     description: tool.description,
-                    parameters: (tool as any).inputSchema || {},
+                    parameters: tool.inputSchema || {},
                 },
             })),
         ];
@@ -729,7 +770,7 @@ function newHonoServer(getConfig: () => Config, mcpManager: MCPManager) {
 
             winstonLogger.info(`=== /chat/completions REQUEST ===`);
             winstonLogger.info(`Model: ${body.model}, Stream: ${body.stream}`);
-            console.log("🔍 TOOLS IN BODY:", body.tools?.map((t: any) => t.function?.name || t.name));
+            console.log("🔍 TOOLS IN BODY:", body.tools?.map((t) => ('function' in t ? t.function?.name : 'name' in t ? t.name : 'unknown')));
 
             // Extract and dynamically register tools
             const toolNames = extractToolNamesFromRequest(body);
@@ -880,8 +921,9 @@ function newHonoServer(getConfig: () => Config, mcpManager: MCPManager) {
         try {
             const models = await getModelsResponse();
             return c.json(models);
-        } catch (error) {
-            winstonLogger.error("Error getting models:", error);
+        } catch (error: unknown) {
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            winstonLogger.error("Error getting models:", errorMessage);
             return c.json(createErrorResponse("Failed to get models"), 500);
         }
     });
@@ -890,8 +932,9 @@ function newHonoServer(getConfig: () => Config, mcpManager: MCPManager) {
         try {
             const models = await getModelsResponse();
             return c.json(models);
-        } catch (error) {
-            winstonLogger.error("Error getting models:", error);
+        } catch (error: unknown) {
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            winstonLogger.error("Error getting models:", errorMessage);
             return c.json(createErrorResponse("Failed to get models"), 500);
         }
     });
@@ -904,7 +947,7 @@ function newHonoServer(getConfig: () => Config, mcpManager: MCPManager) {
 
             winstonLogger.info(`=== /v1/messages REQUEST ===`);
             winstonLogger.info(`Model: ${body.model}, Stream: ${body.stream}`);
-            console.log("🔍 TOOLS IN BODY:", body.tools?.map((t: any) => t.function?.name || t.name));
+            console.log("🔍 TOOLS IN BODY:", body.tools?.map((t) => ('function' in t ? t.function?.name : 'name' in t ? t.name : 'unknown')));
 
             // Extract and dynamically register tools
             const toolNames = extractToolNamesFromRequest(body);
