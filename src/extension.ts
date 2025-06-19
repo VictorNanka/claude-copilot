@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { NewServer } from './server';
+import { newServer } from './server';
 import { getConfig } from './config';
 import { logger } from './logger';
 import { claudeToolSignatures } from './claudeTools';
@@ -149,7 +149,7 @@ export async function activate(context: ExtensionContext): Promise<void> {
 	logToOutput("🚀 HTTP LM API Extension activating...");
 	
 	let config = getConfig();
-	server = NewServer(config);
+	server = newServer(config);
 
 	// Register all Claude Code official tools at startup
 	registerClaudeCodeTools(context);
