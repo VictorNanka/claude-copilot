@@ -1,0 +1,52 @@
+name: Prepare Release
+on:
+  workflow_dispatch:
+    inputs:
+      version_to_increment:
+        description: 'minor, patch, or major'
+        required: true
+        default: 'patch'
+        options:
+          - minor
+          - patch
+          - major
+
+permissions:
+  contents: write
+  id-token: write
+
+jobs:
+  create-release-commit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Set up nodejs
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+      - name: Install dependencies
+        run: npm ci
+      - name: Deploy
+        id: deploy
+        run: |
+          # publishing script will commit and create a tag
+          git config --local user.name "GitHub Action"
+          git config --local user.email "action@github.com"
+
+          npm run vscode:publish -- ${VERSION_TO_INCREMENT}
+
+          export TAG_NAME=$(git describe --tags --abbrev=0)
+
+          git push origin main
+          git push origin $TAG_NAME
+
+          echo "tag_name=${TAG_NAME}" >> $GITHUB_OUTPUT
+        env:
+          VERSION_TO_INCREMENT: ${{ github.event.inputs.version_to_increment }}
+          VSCE_PAT: ${{ secrets.VSCE_PAT }}
+      - name: Create release
+        uses: softprops/action-gh-release@da05d552573ad5aba039eaac05058a918a7bf631 # v2.2.2
+        with:
+          tag_name: ${{ steps.deploy.outputs.tag_name }}

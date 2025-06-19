@@ -1,0 +1,179 @@
+{
+  "name": "claude-copilot",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/victornanka/claude-copilot.git"
+  },
+  "displayName": "Claude Copilot - VS Code AI Assistant",
+  "publisher": "victornanka",
+  "description": "Claude Copilot provides an intelligent AI assistant interface for VS Code with advanced system prompt processing, OpenAI API compatibility, and MCP tool integration for enhanced coding workflows.",
+  "version": "0.1.0",
+  "engines": {
+    "vscode": "^1.99.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "// TODO: This event prefer ?": "",
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "http-lm-api.startLmApiServer",
+        "title": "Start lm api Server"
+      },
+      {
+        "command": "http-lm-api.stopLmApiServer",
+        "title": "Stop lm api Server"
+      }
+    ],
+    "configuration": {
+      "title": "Provide openai compatible API using VScode Language Model API",
+      "type": "object",
+      "properties": {
+        "http-lm-api.port": {
+          "type": "number",
+          "default": 59603,
+          "description": "Port number for the HTTP server"
+        },
+        "http-lm-api.startServerAutomatically": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically start the server when the extension is activated"
+        },
+        "http-lm-api.defaultModel": {
+          "type": "string",
+          "default": "gpt-4.1",
+          "enum": [
+            "gpt-3.5-turbo",
+            "gpt-4o-mini",
+            "gpt-4",
+            "gpt-4-0125-preview",
+            "gpt-4o",
+            "o1",
+            "o3-mini",
+            "claude-3.7-sonnet",
+            "claude-3.7-sonnet-thought",
+            "claude-sonnet-4",
+            "gemini-2.0-flash-001",
+            "gemini-2.5-pro-preview-06-05",
+            "o4-mini",
+            "gpt-4.1"
+          ],
+          "enumDescriptions": [
+            "GPT-3.5 Turbo (OpenAI)",
+            "GPT-4o Mini (OpenAI)",
+            "GPT-4 (OpenAI)",
+            "GPT-4 Preview (OpenAI)",
+            "GPT-4o (OpenAI)",
+            "o1 (OpenAI)",
+            "o3 Mini (OpenAI)",
+            "Claude 3.7 Sonnet (Anthropic)",
+            "Claude 3.7 Sonnet Thought (Anthropic)",
+            "Claude Sonnet 4 (Anthropic)",
+            "Gemini 2.0 Flash (Google)",
+            "Gemini 2.5 Pro Preview (Google)",
+            "o4 Mini (OpenAI)",
+            "GPT-4.1 (OpenAI)"
+          ],
+          "description": "Default model to use when the requested model is not available"
+        },
+        "http-lm-api.enableToolCalling": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable tool calling support"
+        },
+        "http-lm-api.mcpClients": {
+          "type": "object",
+          "default": {},
+          "description": "MCP client configurations",
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "command": {
+                "type": "string",
+                "description": "Command to run the MCP server"
+              },
+              "args": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "Arguments for the MCP server command"
+              },
+              "env": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": "string"
+                },
+                "description": "Environment variables for the MCP server"
+              }
+            },
+            "required": [
+              "command"
+            ]
+          }
+        },
+        "http-lm-api.systemPrompt": {
+          "type": "string",
+          "default": "",
+          "description": "Default system prompt to prepend to all conversations. This helps improve instruction following with VS Code LM API.",
+          "markdownDescription": "Default system prompt to prepend to all conversations. This helps improve instruction following with VS Code LM API.\n\n**Example:**\n```\nYou are a helpful AI assistant. Always follow user instructions carefully and provide accurate, helpful responses.\n```"
+        },
+        "http-lm-api.systemPromptFormat": {
+          "type": "string",
+          "enum": [
+            "merge",
+            "assistant_acknowledgment",
+            "simple_prepend"
+          ],
+          "default": "merge",
+          "description": "How to handle system prompts with VS Code LM API",
+          "enumDescriptions": [
+            "Merge system content into first user message with clear formatting (recommended)",
+            "Convert system to assistant acknowledgment + user instruction request",
+            "Simple prepend system content to first user message"
+          ]
+        },
+        "http-lm-api.enableSystemPromptProcessing": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable intelligent system prompt processing to improve instruction following"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile && npm run lint",
+    "lint": "eslint src",
+    "test": "vscode-test",
+    "vscode:publish": "vsce publish"
+  },
+  "devDependencies": {
+    "@types/mocha": "^10.0.10",
+    "@types/node": "20.x",
+    "@types/node-fetch": "^2.6.12",
+    "@types/vscode": "^1.99.0",
+    "@typescript-eslint/eslint-plugin": "^8.31.1",
+    "@typescript-eslint/parser": "^8.31.1",
+    "@vscode/test-cli": "^0.0.10",
+    "@vscode/test-electron": "^2.5.2",
+    "eslint": "^9.25.1",
+    "typescript": "^5.8.3",
+    "vsce": "^2.15.0"
+  },
+  "dependencies": {
+    "@hono/node-server": "^1.14.4",
+    "@modelcontextprotocol/sdk": "^1.12.3",
+    "hono": "^4.8.0",
+    "node-fetch": "^3.3.2",
+    "winston": "^3.17.0",
+    "winston-transport-vscode": "^0.1.0"
+  }
+}
