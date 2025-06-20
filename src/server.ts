@@ -34,18 +34,43 @@ export function newServer(config: Config): ServerInstance {
   initializeMCPClients(mcpManager, config);
 
   return {
-    start: (): void => {
+    start: async (): Promise<void> => {
       const port = config.port;
       if (startedServer) {
         vscode.window.showInformationMessage('LM API server is already running');
         return;
       }
-      const { serve } = require('@hono/node-server');
-      startedServer = serve({
-        fetch: server.fetch,
-        port,
-      });
-      vscode.window.showInformationMessage(`LM API server is running on port ${port}`);
+
+      try {
+        const { serve } = require('@hono/node-server');
+        startedServer = serve({
+          fetch: server.fetch,
+          port,
+        });
+
+        // Give the server a moment to start and check if it's actually listening
+        await new Promise(resolve => setTimeout(resolve, 100));
+
+        winstonLogger.info(`HTTP LM API server started successfully on port ${port}`);
+        vscode.window.showInformationMessage(`LM API server is running on port ${port}`);
+      } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        winstonLogger.error(`Failed to start HTTP LM API server on port ${port}: ${errorMessage}`);
+
+        // Check if it's a port conflict
+        if (
+          errorMessage.includes('EADDRINUSE') ||
+          errorMessage.includes('address already in use')
+        ) {
+          const message = `Port ${port} is already in use. Please change the port in settings or stop the conflicting service.`;
+          vscode.window.showErrorMessage(message);
+          throw new Error(message);
+        } else {
+          const message = `Failed to start server: ${errorMessage}`;
+          vscode.window.showErrorMessage(message);
+          throw new Error(message);
+        }
+      }
     },
     stop: (): void => {
       if (startedServer) {
