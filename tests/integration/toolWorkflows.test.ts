@@ -399,7 +399,7 @@ describe('Tool Workflows Integration Tests', () => {
             return { success: true, result, retries };
           } catch (error) {
             retries++;
-            if (retries > MAX_RETRIES) {
+            if (retries > maxRetries) {
               return { success: false, error: error.message, retries };
             }
           }
@@ -409,7 +409,7 @@ describe('Tool Workflows Integration Tests', () => {
       const result = await simulateRetryMechanism('CustomTool');
 
       expect(result.success).toBe(true);
-      expect(result.retries).toBe(3); // Failed twice, succeeded on third attempt
+      expect(result.retries).toBe(2); // Failed twice, succeeded on third attempt (2 retries)
       expect(result.result).toMatchObject({
         name: 'CustomTool',
         description: 'Dynamically discovered CustomTool',
@@ -433,7 +433,7 @@ describe('Tool Workflows Integration Tests', () => {
             return await simulateAlwaysFailingDiscovery();
           } catch (error) {
             retries++;
-            if (retries > MAX_RETRIES) {
+            if (retries > maxRetries) {
               return { success: false, error: error.message, totalAttempts: attempts };
             }
           }

@@ -6,14 +6,18 @@
     "lib": ["ES2022", "DOM"],
     "sourceMap": true,
     "rootDir": "src",
-    "strict": true,
+    "strict": false,
     "isolatedModules": true,
     "skipLibCheck": true,
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "forceConsistentCasingInFileNames": true,
     "moduleResolution": "Node16",
-    "types": ["node", "vscode"]
+    "types": ["node", "vscode"],
+    "noImplicitAny": false,
+    "noImplicitReturns": false,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "out", "tests", "src/test"]

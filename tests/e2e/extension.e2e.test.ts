@@ -312,7 +312,9 @@ suite('Claude Copilot Extension E2E Tests', () => {
 
       while (chunkCount < 3) {
         const { done, value } = await reader.read();
-        if (done) {break;}
+        if (done) {
+          break;
+        }
 
         const chunk = decoder.decode(value);
         if (chunk.includes('data:')) {

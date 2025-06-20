@@ -60,6 +60,27 @@ describe('API Endpoints Integration Tests', () => {
     // Create a simplified Hono app for testing
     app = new Hono();
 
+    // Add content-type validation middleware for POST requests
+    app.use('/chat/completions', async (c, next) => {
+      if (c.req.method === 'POST') {
+        const contentType = c.req.header('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+          return c.json({ error: 'Content-Type must be application/json' }, 400);
+        }
+      }
+      await next();
+    });
+
+    app.use('/v1/messages', async (c, next) => {
+      if (c.req.method === 'POST') {
+        const contentType = c.req.header('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+          return c.json({ error: 'Content-Type must be application/json' }, 400);
+        }
+      }
+      await next();
+    });
+
     // Add basic endpoints for testing
     app.get('/', c => c.text('ok'));
 
@@ -100,53 +121,79 @@ describe('API Endpoints Integration Tests', () => {
     });
 
     app.post('/chat/completions', async c => {
-      const body = await c.req.json();
+      try {
+        const body = await c.req.json();
 
-      if (body.stream) {
-        return c.text(
-          'data: {"id":"test","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"content":"Hello"}}]}\n\ndata: [DONE]\n\n',
-          200,
-          {
-            'Content-Type': 'text/plain',
-          }
-        );
-      } else {
-        return c.json({
-          id: 'test',
-          object: 'chat.completion',
-          choices: [
+        // Validate required fields
+        if (!body.model || !body.messages) {
+          return c.json({ error: 'Missing required fields: model, messages' }, 400);
+        }
+
+        if (body.stream) {
+          return c.text(
+            'data: {"id":"test","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"content":"Hello"}}]}\n\ndata: [DONE]\n\n',
+            200,
             {
-              index: 0,
-              message: {
-                role: 'assistant',
-                content: 'Hello, how can I help you?',
+              'Content-Type': 'text/plain',
+            }
+          );
+        } else {
+          return c.json({
+            id: 'test',
+            object: 'chat.completion',
+            choices: [
+              {
+                index: 0,
+                message: {
+                  role: 'assistant',
+                  content: 'Hello, how can I help you?',
+                },
+                finish_reason: 'stop',
               },
-              finish_reason: 'stop',
-            },
-          ],
-        });
+            ],
+          });
+        }
+      } catch {
+        return c.json({ error: 'Invalid JSON payload' }, 400);
       }
     });
 
     app.post('/v1/messages', async c => {
-      const body = await c.req.json();
+      try {
+        const body = await c.req.json();
 
-      if (body.stream) {
-        return c.text(
-          'event: message_start\ndata: {"type":"message_start","message":{"id":"test","type":"message","role":"assistant","content":[]}}\n\nevent: content_block_delta\ndata: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"Hello"}}\n\nevent: message_stop\ndata: {"type":"message_stop"}\n\n',
-          200,
-          {
-            'Content-Type': 'text/plain',
-          }
-        );
-      } else {
-        return c.json({
-          id: 'test',
-          type: 'message',
-          role: 'assistant',
-          content: [{ type: 'text', text: 'Hello, how can I help you?' }],
-          stop_reason: 'end_turn',
-        });
+        if (body.stream) {
+          return c.text(
+            'event: message_start\ndata: {"type":"message_start","message":{"id":"test","type":"message","role":"assistant","content":[]}}\n\nevent: content_block_delta\ndata: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"Hello"}}\n\nevent: message_stop\ndata: {"type":"message_stop"}\n\n',
+            200,
+            {
+              'Content-Type': 'text/plain',
+            }
+          );
+        } else {
+          return c.json({
+            id: 'test',
+            type: 'message',
+            role: 'assistant',
+            content: [{ type: 'text', text: 'Hello, how can I help you?' }],
+            stop_reason: 'end_turn',
+          });
+        }
+      } catch {
+        return c.json({ error: 'Invalid JSON payload' }, 400);
+      }
+    });
+
+    // Handle unsupported methods
+    app.all('/chat/completions', async c => {
+      if (c.req.method !== 'POST') {
+        return c.json({ error: 'Method not allowed' }, 405);
+      }
+    });
+
+    app.all('/v1/messages', async c => {
+      if (c.req.method !== 'POST') {
+        return c.json({ error: 'Method not allowed' }, 405);
       }
     });
   });

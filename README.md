@@ -5,18 +5,21 @@ Claude Copilot is an intelligent VS Code extension that provides advanced AI ass
 ## 🚀 Features
 
 ### **Intelligent System Prompt Processing**
+
 - **Advanced Instruction Following**: Overcomes VS Code LM API limitations with intelligent message preprocessing
 - **Multiple Format Strategies**: Choose from merge, assistant acknowledgment, or simple prepend formats
 - **Clear Delimiters**: Uses structured formatting (`<SYSTEM_INSTRUCTIONS>`, `<USER_MESSAGE>`) for better AI comprehension
 - **Configurable Default Prompts**: Set project-wide system prompts via VS Code settings
 
 ### **OpenAI API Compatibility**
+
 - **Drop-in Replacement**: Compatible with OpenAI API endpoints (`/chat/completions`, `/v1/messages`)
 - **Streaming Support**: Real-time response streaming for interactive experiences
 - **Tool Calling**: Advanced function calling capabilities with dynamic tool discovery
 - **Model Flexibility**: Access to all [GitHub Copilot models](https://docs.github.com/en/copilot/using-github-copilot/ai-models/changing-the-ai-model-for-copilot-chat)
 
 ### **MCP Tool Integration**
+
 - **Dynamic Tool Discovery**: Automatically discover and register Claude Code tools
 - **MCP Client Support**: Connect to external MCP servers for extended functionality
 - **Tool Auto-Registration**: Seamless integration with VS Code Language Model tooling
@@ -35,34 +38,37 @@ This extension transforms VS Code into a powerful AI coding assistant without re
 
 ## ⚙️ Extension Settings
 
-| Setting | Default | Description |
-|---------|---------|-------------|
-| `claude-copilot.port` | `59603` | HTTP server port |
-| `claude-copilot.startServerAutomatically` | `true` | Auto-start server on VS Code launch |
-| `claude-copilot.defaultModel` | `gpt-4.1` | Default model when requested model unavailable |
-| `claude-copilot.systemPrompt` | `""` | Default system prompt for all conversations |
-| `claude-copilot.systemPromptFormat` | `merge` | System prompt formatting strategy |
-| `claude-copilot.enableSystemPromptProcessing` | `true` | Enable intelligent system prompt processing |
-| `claude-copilot.enableToolCalling` | `true` | Enable tool calling support |
-| `claude-copilot.mcpClients` | `{}` | MCP client configurations |
+| Setting                                       | Default   | Description                                    |
+| --------------------------------------------- | --------- | ---------------------------------------------- |
+| `claude-copilot.port`                         | `68686`   | HTTP server port                               |
+| `claude-copilot.startServerAutomatically`     | `true`    | Auto-start server on VS Code launch            |
+| `claude-copilot.defaultModel`                 | `gpt-4.1` | Default model when requested model unavailable |
+| `claude-copilot.systemPrompt`                 | `""`      | Default system prompt for all conversations    |
+| `claude-copilot.systemPromptFormat`           | `merge`   | System prompt formatting strategy              |
+| `claude-copilot.enableSystemPromptProcessing` | `true`    | Enable intelligent system prompt processing    |
+| `claude-copilot.enableToolCalling`            | `true`    | Enable tool calling support                    |
+| `claude-copilot.mcpClients`                   | `{}`      | MCP client configurations                      |
 
 ### System Prompt Formats
 
 1. **Merge** (Recommended): Uses clear XML-style delimiters for optimal instruction following
-2. **Assistant Acknowledgment**: Creates assistant acknowledgment + user instruction pattern  
+2. **Assistant Acknowledgment**: Creates assistant acknowledgment + user instruction pattern
 3. **Simple Prepend**: Basic prepending to first user message
 
 ## 🔌 API Endpoints
 
 ### OpenAI Compatible
+
 - `POST /chat/completions` - Chat completions with streaming support
 - `GET /models` - List available models
 - `GET /v1/models` - Alternative models endpoint
 
-### Anthropic Compatible  
+### Anthropic Compatible
+
 - `POST /v1/messages` - Anthropic-style message API
 
 ### Tool Discovery
+
 - `GET /tools` - List all available tools (Claude Code + MCP)
 
 ## 🛠️ MCP Integration
