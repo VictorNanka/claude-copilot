@@ -238,7 +238,7 @@ describe('MCP Integration Tests', () => {
 
   describe('MCP Configuration', () => {
     it('should validate MCP configuration structure', () => {
-      expect(exampleMCPConfig).toHaveProperty('http-lm-api.mcpClients');
+      expect(exampleMCPConfig).toHaveProperty(['http-lm-api.mcpClients']);
       expect(exampleMCPConfig['http-lm-api.mcpClients']).toHaveProperty('filesystem');
       expect(exampleMCPConfig['http-lm-api.mcpClients']).toHaveProperty('weather');
 
