@@ -36,7 +36,8 @@ export function addDiscoveredTool(toolSignature: ToolSignature): boolean {
     return true;
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : String(error);
-    logToOutput(`❌ Failed to add discovered tool ${toolSignature.name}: ${errorMessage}`);
+    const toolName = toolSignature?.name || 'unknown';
+    logToOutput(`❌ Failed to add discovered tool ${toolName}: ${errorMessage}`);
     return false;
   }
 }
