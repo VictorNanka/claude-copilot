@@ -6,173 +6,87 @@ on:
   pull_request:
     branches: [main, develop]
 
-env:
-  NODE_VERSION: '20'
-  YARN_VERSION: '4.1.0'
-
 jobs:
-  lint-and-format:
-    name: Code Quality Checks
-    runs-on: ubuntu-latest
+  test:
+    name: Test & Quality Checks
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+      fail-fast: false
+    runs-on: ${{ matrix.os }}
     
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Node.js with Corepack
+      # Critical: Enable Corepack BEFORE setup-node
+      - name: Enable Corepack
+        run: corepack enable
+        
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: ${{ env.NODE_VERSION }}
-          check-latest: true
+          node-version: '20.x'
+          cache: 'yarn'
 
-      - name: Enable and configure Corepack
-        run: |
-          echo "🔧 Enabling Corepack..."
-          corepack enable
-          echo "📦 Corepack version:"
-          corepack --version
-          echo "🎯 Preparing Yarn ${{ env.YARN_VERSION }}..."
-          corepack prepare yarn@${{ env.YARN_VERSION }} --activate
-          echo "✅ Yarn version:"
-          yarn --version
-
-      - name: Setup Yarn cache
-        uses: actions/cache@v4
-        with:
-          path: |
-            .yarn/cache
-            .yarn/unplugged
-            .yarn/build-state.yml
-            .yarn/install-state.gz
-          key: yarn-${{ runner.os }}-${{ hashFiles('yarn.lock') }}
-          restore-keys: |
-            yarn-${{ runner.os }}-
-
-      - name: Install dependencies with retry
-        run: |
-          echo "📦 Installing dependencies..."
-          for i in 1 2 3; do
-            if yarn install --immutable; then
-              echo "✅ Dependencies installed successfully"
-              break
-            else
-              echo "❌ Attempt $i failed, retrying..."
-              sleep 5
-            fi
-          done
-
-      - name: Debug environment
-        run: |
-          echo "🔍 Environment Debug Info:"
-          echo "Node version: $(node --version)"
-          echo "Yarn version: $(yarn --version)"
-          echo "Package manager: $(cat package.json | grep packageManager || echo 'Not specified')"
-          echo "Working directory: $(pwd)"
-          echo "Yarn cache dir: $(yarn config get cacheFolder)"
+      - name: Install dependencies
+        run: yarn install --immutable
 
       - name: Run ESLint
-        run: |
-          if [ "$PACKAGE_MANAGER" = "npm" ]; then
-            echo "⚠️ Running ESLint with npm (Yarn preferred)"
-            npm run lint:check
-          else
-            echo "✅ Running ESLint with Yarn"
-            yarn lint:check
-          fi
+        run: yarn lint:check
 
       - name: Check Prettier formatting
-        run: |
-          if [ "$PACKAGE_MANAGER" = "npm" ]; then
-            echo "⚠️ Running Prettier with npm (Yarn preferred)"
-            npm run format:check
-          else
-            echo "✅ Running Prettier with Yarn"
-            yarn format:check
-          fi
+        run: yarn format:check
 
       - name: TypeScript compile check
-        run: |
-          if [ "$PACKAGE_MANAGER" = "npm" ]; then
-            echo "⚠️ Running TypeScript compilation with npm (Yarn preferred)"
-            npm run compile
-          else
-            echo "✅ Running TypeScript compilation with Yarn"
-            yarn compile
-          fi
+        run: yarn compile
 
-  unit-tests:
-    name: Unit Tests
+      - name: Run unit tests
+        run: yarn test:unit
+
+      - name: Run integration tests
+        run: yarn test:integration
+
+      # VS Code extension tests (headless on Linux)
+      - name: Run E2E tests (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          export DISPLAY=:99
+          Xvfb :99 -screen 0 1920x1080x24 &
+          yarn test:e2e
+        env:
+          NODE_ENV: test
+
+      - name: Run E2E tests (macOS/Windows)
+        if: runner.os != 'Linux'
+        run: yarn test:e2e
+        env:
+          NODE_ENV: test
+
+  coverage:
+    name: Test Coverage
     runs-on: ubuntu-latest
     
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Node.js with Corepack
+      - name: Enable Corepack
+        run: corepack enable
+        
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: ${{ env.NODE_VERSION }}
-          check-latest: true
+          node-version: '20.x'
+          cache: 'yarn'
 
-      - name: Enable and configure Corepack
-        run: |
-          corepack enable
-          corepack prepare yarn@${{ env.YARN_VERSION }} --activate
+      - name: Install dependencies
+        run: yarn install --immutable
 
-      - name: Setup Yarn cache
-        uses: actions/cache@v4
-        with:
-          path: |
-            .yarn/cache
-            .yarn/unplugged
-            .yarn/build-state.yml
-            .yarn/install-state.gz
-          key: yarn-${{ runner.os }}-${{ hashFiles('yarn.lock') }}
-          restore-keys: |
-            yarn-${{ runner.os }}-
+      - name: Run tests with coverage
+        run: yarn test:coverage:ci
 
-      - name: Install dependencies (Yarn prioritized)
-        run: |
-          echo "🎯 Priority: Using Yarn 4.x..."
-          
-          # Multiple attempts with Yarn first
-          YARN_SUCCESS=false
-          for attempt in 1 2 3; do
-            echo "📦 Yarn attempt $attempt/3..."
-            if yarn install --immutable; then
-              echo "✅ Yarn ${{ env.YARN_VERSION }} installation successful!"
-              echo "PACKAGE_MANAGER=yarn" >> $GITHUB_ENV
-              YARN_SUCCESS=true
-              break
-            else
-              echo "❌ Yarn attempt $attempt failed"
-              if [ $attempt -lt 3 ]; then
-                echo "🔄 Retrying Yarn in 3 seconds..."
-                sleep 3
-                # Try to fix any Yarn issues
-                yarn cache clean --all || true
-                corepack prepare yarn@${{ env.YARN_VERSION }} --activate || true
-              fi
-            fi
-          done
-          
-          # Only use npm as absolute last resort
-          if [ "$YARN_SUCCESS" = "false" ]; then
-            echo "⚠️ All Yarn attempts failed, using npm as emergency fallback..."
-            npm install
-            echo "PACKAGE_MANAGER=npm" >> $GITHUB_ENV
-            echo "⚠️ WARNING: Using npm instead of preferred Yarn"
-          fi
-
-      - name: Run unit tests with coverage
-        run: |
-          if [ "$PACKAGE_MANAGER" = "npm" ]; then
-            npm run test:coverage:ci
-          else
-            yarn test:coverage:ci
-          fi
-
-      - name: Upload coverage reports to Codecov
+      - name: Upload coverage to Codecov
         if: success()
         uses: codecov/codecov-action@v4
         with:
@@ -180,115 +94,7 @@ jobs:
           files: ./coverage/lcov.info
           fail_ci_if_error: false
 
-  integration-tests:
-    name: Integration Tests
-    runs-on: ubuntu-latest
-    
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js with Corepack
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          check-latest: true
-
-      - name: Enable and configure Corepack
-        run: |
-          corepack enable
-          corepack prepare yarn@${{ env.YARN_VERSION }} --activate
-
-      - name: Install dependencies (Yarn prioritized)
-        run: |
-          echo "🎯 Priority: Using Yarn 4.x..."
-          
-          # Multiple attempts with Yarn first
-          YARN_SUCCESS=false
-          for attempt in 1 2 3; do
-            echo "📦 Yarn attempt $attempt/3..."
-            if yarn install --immutable; then
-              echo "✅ Yarn ${{ env.YARN_VERSION }} installation successful!"
-              echo "PACKAGE_MANAGER=yarn" >> $GITHUB_ENV
-              YARN_SUCCESS=true
-              break
-            else
-              echo "❌ Yarn attempt $attempt failed"
-              if [ $attempt -lt 3 ]; then
-                echo "🔄 Retrying Yarn in 3 seconds..."
-                sleep 3
-                yarn cache clean --all || true
-                corepack prepare yarn@${{ env.YARN_VERSION }} --activate || true
-              fi
-            fi
-          done
-          
-          # Only use npm as absolute last resort
-          if [ "$YARN_SUCCESS" = "false" ]; then
-            echo "⚠️ All Yarn attempts failed, using npm as emergency fallback..."
-            npm install
-            echo "PACKAGE_MANAGER=npm" >> $GITHUB_ENV
-            echo "⚠️ WARNING: Using npm instead of preferred Yarn"
-          fi
-
-      - name: Run integration tests
-        run: |
-          if [ "$PACKAGE_MANAGER" = "npm" ]; then
-            npm run test:integration
-          else
-            yarn test:integration
-          fi
-
-  e2e-tests:
-    name: E2E Tests
-    runs-on: ubuntu-latest
-    
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-
-      - name: Install dependencies (Yarn priority)
-        run: |
-          echo "🎯 E2E Tests: Prioritizing Yarn 4.x..."
-          
-          # Try Corepack + Yarn first
-          if command -v corepack >/dev/null 2>&1; then
-            corepack enable
-            corepack prepare yarn@4.1.0 --activate || true
-            
-            # Multiple Yarn attempts
-            for attempt in 1 2; do
-              echo "📦 Yarn attempt $attempt/2..."
-              if yarn install --immutable; then
-                echo "✅ Yarn success for E2E tests!"
-                echo "E2E_PACKAGE_MANAGER=yarn" >> $GITHUB_ENV
-                exit 0
-              fi
-              [ $attempt -lt 2 ] && sleep 2
-            done
-          fi
-          
-          # npm fallback only if Yarn completely fails
-          echo "⚠️ Yarn failed, using npm for E2E tests..."
-          npm install
-          echo "E2E_PACKAGE_MANAGER=npm" >> $GITHUB_ENV
-
-      - name: Run E2E tests
-        run: |
-          if [ "$E2E_PACKAGE_MANAGER" = "npm" ]; then
-            echo "⚠️ Running E2E tests with npm..."
-            xvfb-run -a npm run test:e2e
-          else
-            echo "✅ Running E2E tests with Yarn..."
-            xvfb-run -a yarn test:e2e
-          fi
-
-  security-audit:
+  security:
     name: Security Audit
     runs-on: ubuntu-latest
     
@@ -296,176 +102,86 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Enable Corepack
+        run: corepack enable
+        
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: ${{ env.NODE_VERSION }}
+          node-version: '20.x'
+          cache: 'yarn'
 
-      - name: Enable Corepack for security audit
-        run: |
-          corepack enable
-          corepack prepare yarn@${{ env.YARN_VERSION }} --activate || true
-
-      - name: Install dependencies (Yarn preferred for audit)
-        run: |
-          echo "🎯 Security Audit: Attempting Yarn first..."
-          if yarn install --immutable; then
-            echo "✅ Yarn installation for security audit"
-            echo "AUDIT_PACKAGE_MANAGER=yarn" >> $GITHUB_ENV
-          else
-            echo "⚠️ Yarn failed, using npm for security audit..."
-            npm install
-            echo "AUDIT_PACKAGE_MANAGER=npm" >> $GITHUB_ENV
-          fi
+      - name: Install dependencies
+        run: yarn install --immutable
 
       - name: Run security audit
-        run: |
-          if [ "$AUDIT_PACKAGE_MANAGER" = "npm" ]; then
-            echo "⚠️ Running security audit with npm..."
-            npm audit --audit-level=high || echo "npm audit warnings found but continuing..."
-          else
-            echo "✅ Running security audit with Yarn..."
-            yarn audit --severity high || echo "Yarn audit warnings found but continuing..."
-          fi
+        run: yarn audit --severity high
+        continue-on-error: true
 
-      - name: Check for known vulnerabilities
-        run: npx audit-ci --config ./audit-ci.json || echo "Vulnerability check completed with warnings"
+      - name: Check for vulnerabilities
+        run: npx audit-ci --config ./audit-ci.json
         continue-on-error: true
 
   build:
-    name: Build Extension
+    name: Build & Package
     runs-on: ubuntu-latest
-    needs: [lint-and-format, unit-tests, integration-tests]
+    needs: [test, coverage, security]
     
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Enable Corepack
+        run: corepack enable
+        
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: ${{ env.NODE_VERSION }}
+          node-version: '20.x'
+          cache: 'yarn'
 
-      - name: Install dependencies (Yarn strongly prioritized)
-        run: |
-          echo "🎯 Build: Strongly prioritizing Yarn 4.x for production build..."
-          
-          # Ensure Corepack is available and configured
-          if command -v corepack >/dev/null 2>&1; then
-            corepack enable
-            corepack prepare yarn@${{ env.YARN_VERSION }} --activate
-            
-            # Aggressive Yarn retry strategy for production builds
-            YARN_SUCCESS=false
-            for attempt in 1 2 3 4; do
-              echo "📦 Production build - Yarn attempt $attempt/4..."
-              if yarn install --immutable; then
-                echo "✅ Yarn ${{ env.YARN_VERSION }} SUCCESS for production build!"
-                echo "PACKAGE_MANAGER=yarn" >> $GITHUB_ENV
-                YARN_SUCCESS=true
-                break
-              else
-                echo "❌ Yarn attempt $attempt failed"
-                if [ $attempt -lt 4 ]; then
-                  echo "🔄 Aggressive retry in 5 seconds..."
-                  sleep 5
-                  # Try to reset Yarn state
-                  yarn cache clean --all || true
-                  rm -rf .yarn/cache .yarn/unplugged || true
-                  corepack prepare yarn@${{ env.YARN_VERSION }} --activate || true
-                fi
-              fi
-            done
-            
-            # Only fall back to npm if absolutely necessary
-            if [ "$YARN_SUCCESS" = "false" ]; then
-              echo "🚨 CRITICAL: All Yarn attempts failed for production build!"
-              echo "📦 Emergency fallback to npm..."
-              npm install
-              echo "PACKAGE_MANAGER=npm" >> $GITHUB_ENV
-              echo "⚠️ WARNING: Production build using npm instead of preferred Yarn"
-            fi
-          else
-            echo "❌ Corepack not available, using npm..."
-            npm install
-            echo "PACKAGE_MANAGER=npm" >> $GITHUB_ENV
-          fi
+      - name: Install dependencies
+        run: yarn install --immutable
 
       - name: Build extension
-        run: |
-          if [ "$PACKAGE_MANAGER" = "npm" ]; then
-            npm run compile
-          else
-            yarn compile
-          fi
+        run: yarn compile
 
       - name: Package extension
-        run: |
-          if [ "$PACKAGE_MANAGER" = "npm" ]; then
-            npm run vscode:package
-          else
-            yarn vscode:package
-          fi
+        run: yarn vscode:package
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: extension-package
+          name: extension-package-${{ runner.os }}
           path: '*.vsix'
+          retention-days: 7
 
   publish:
     name: Publish Extension
     runs-on: ubuntu-latest
-    needs: [build, e2e-tests, security-audit]
+    needs: [build]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Enable Corepack
+        run: corepack enable
+        
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: ${{ env.NODE_VERSION }}
+          node-version: '20.x'
+          cache: 'yarn'
 
-      - name: Install dependencies (Yarn preferred for publishing)
-        run: |
-          echo "🎯 Publishing: Prioritizing Yarn for production release..."
-          if command -v corepack >/dev/null 2>&1; then
-            corepack enable
-            corepack prepare yarn@${{ env.YARN_VERSION }} --activate
-            if yarn install --immutable; then
-              echo "✅ Yarn installation for publishing"
-              echo "PUBLISH_PACKAGE_MANAGER=yarn" >> $GITHUB_ENV
-            else
-              echo "⚠️ Yarn failed, using npm for publishing..."
-              npm install
-              echo "PUBLISH_PACKAGE_MANAGER=npm" >> $GITHUB_ENV
-            fi
-          else
-            echo "⚠️ Corepack unavailable, using npm for publishing..."
-            npm install
-            echo "PUBLISH_PACKAGE_MANAGER=npm" >> $GITHUB_ENV
-          fi
+      - name: Install dependencies
+        run: yarn install --immutable
 
       - name: Build extension
-        run: |
-          if [ "$PUBLISH_PACKAGE_MANAGER" = "npm" ]; then
-            echo "⚠️ Building with npm for publishing..."
-            npm run compile
-          else
-            echo "✅ Building with Yarn for publishing..."
-            yarn compile
-          fi
+        run: yarn compile
 
       - name: Publish to VS Code Marketplace
-        run: |
-          if [ "$PUBLISH_PACKAGE_MANAGER" = "npm" ]; then
-            echo "⚠️ Publishing with npm..."
-            npm run vscode:publish
-          else
-            echo "✅ Publishing with Yarn..."
-            yarn vscode:publish
-          fi
+        run: yarn vscode:publish
         env:
           VSCE_PAT: ${{ secrets.VSCE_PAT }}
