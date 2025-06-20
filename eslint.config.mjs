@@ -28,6 +28,11 @@ export default [
           format: ["camelCase"],
         },
         {
+          selector: "parameter",
+          format: ["camelCase"],
+          leadingUnderscore: "allow",
+        },
+        {
           selector: "typeLike",
           format: ["PascalCase"],
         },

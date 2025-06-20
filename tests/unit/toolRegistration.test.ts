@@ -2,19 +2,81 @@ import { claudeToolSignatures } from '../../src/claudeTools';
 
 // Mock VS Code API
 const mockVSCode = {
+  window: {
+    createOutputChannel: jest.fn(() => ({
+      appendLine: jest.fn(),
+      show: jest.fn(),
+    })),
+    showInformationMessage: jest.fn(),
+    showErrorMessage: jest.fn(),
+  },
+  workspace: {
+    onDidChangeConfiguration: jest.fn(),
+    getConfiguration: jest.fn(() => ({
+      get: jest.fn(),
+      update: jest.fn(),
+    })),
+  },
+  commands: {
+    registerCommand: jest.fn(),
+  },
   lm: {
     registerTool: jest.fn(() => ({
       dispose: jest.fn(),
     })),
+    selectChatModels: jest.fn(() => []),
+    invokeTool: jest.fn(),
   },
-  LanguageModelToolResult: jest.fn(),
+  LanguageModelChatMessage: jest.fn(),
+  LanguageModelChatMessageRole: {
+    User: 1,
+    Assistant: 2,
+  },
   LanguageModelTextPart: jest.fn(),
+  LanguageModelToolResult: jest.fn(),
+  LanguageModelChatToolMode: {
+    Auto: 'auto',
+  },
+  CancellationTokenSource: jest.fn(() => ({
+    token: {},
+  })),
   ExtensionContext: jest.fn(() => ({
     subscriptions: [],
   })),
 };
 
 jest.mock('vscode', () => mockVSCode);
+
+// Mock the logger module to prevent VS Code dependency issues
+jest.mock('../../src/logger', () => ({
+  logger: {
+    info: jest.fn(),
+    debug: jest.fn(),
+    error: jest.fn(),
+  },
+}));
+
+// Mock the server module to prevent circular dependencies
+jest.mock('../../src/server', () => ({
+  newServer: jest.fn(() => ({
+    start: jest.fn(),
+    stop: jest.fn(),
+    updateConfig: jest.fn(),
+  })),
+}));
+
+// Mock the config module
+jest.mock('../../src/config', () => ({
+  getConfig: jest.fn(() => ({
+    port: 59603,
+    startAutomatically: true,
+    defaultModel: 'gpt-4.1',
+    systemPrompt: '',
+    systemPromptFormat: 'merge',
+    enableSystemPromptProcessing: true,
+    mcpClients: {},
+  })),
+}));
 
 // Import after mocking
 import { registerToolDynamically, addDiscoveredTool, registerMCPTool } from '../../src/extension';

@@ -1,15 +1,29 @@
-import * as assert from 'assert';
+import { activate, deactivate } from '../../src/extension';
 
-// You can import and use all API from the 'vscode' module
-// as well as import your extension to test it
-import * as vscode from 'vscode';
-// import * as myExtension from '../../extension';
+jest.mock('vscode');
 
-suite('Extension Test Suite', () => {
-  vscode.window.showInformationMessage('Start all tests.');
+describe('Extension Test Suite', () => {
+  beforeEach(() => {
+    // Reset mocks before each test
+    jest.clearAllMocks();
+  });
 
   test('Sample test', () => {
-    assert.strictEqual(-1, [1, 2, 3].indexOf(5));
-    assert.strictEqual(-1, [1, 2, 3].indexOf(0));
+    expect([1, 2, 3].indexOf(5)).toBe(-1);
+    expect([1, 2, 3].indexOf(0)).toBe(-1);
+  });
+
+  test('extension can be activated', async () => {
+    const mockContext = {
+      subscriptions: [],
+    };
+
+    // This should not throw
+    await expect(activate(mockContext as any)).resolves.toBeUndefined();
+  });
+
+  test('extension can be deactivated', async () => {
+    // This should not throw
+    await expect(deactivate()).resolves.toBeUndefined();
   });
 });

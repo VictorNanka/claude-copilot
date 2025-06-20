@@ -149,7 +149,10 @@ describe('MCPManager', () => {
         },
         expect.any(Object)
       );
-      expect(result).toBe(mockResult);
+      expect(result).toEqual({
+        content: [{ type: 'text', text: 'File list result' }],
+        isError: false,
+      });
     });
 
     it('should call tool without client prefix if tool exists', async () => {
@@ -161,7 +164,10 @@ describe('MCPManager', () => {
 
       const result = await mcpManager.callTool('list_files', { path: '/test' });
 
-      expect(result).toBe(mockResult);
+      expect(result).toEqual({
+        content: [{ type: 'text', text: 'File list result' }],
+        isError: false,
+      });
     });
 
     it('should throw error for unknown tool', async () => {

@@ -1,13 +1,15 @@
 import { getConfig } from '../../src/config';
 
-// Mock VS Code workspace
-const mockWorkspace = {
-  getConfiguration: jest.fn(),
-};
-
 jest.mock('vscode', () => ({
-  workspace: mockWorkspace,
+  workspace: {
+    getConfiguration: jest.fn(),
+  },
 }));
+
+import * as vscode from 'vscode';
+const mockGetConfiguration = vscode.workspace.getConfiguration as jest.MockedFunction<
+  typeof vscode.workspace.getConfiguration
+>;
 
 describe('Config', () => {
   beforeEach(() => {
@@ -16,7 +18,7 @@ describe('Config', () => {
 
   describe('getConfig', () => {
     it('should return default configuration when no settings provided', () => {
-      mockWorkspace.getConfiguration.mockReturnValue({
+      mockGetConfiguration.mockReturnValue({
         get: jest.fn().mockImplementation((key: string) => {
           const defaults: any = {
             port: 68686,
@@ -41,7 +43,7 @@ describe('Config', () => {
     });
 
     it('should return custom configuration when settings provided', () => {
-      mockWorkspace.getConfiguration.mockReturnValue({
+      mockGetConfiguration.mockReturnValue({
         get: jest.fn().mockImplementation((key: string) => {
           const custom: any = {
             port: 8080,
@@ -74,9 +76,11 @@ describe('Config', () => {
         },
       };
 
-      mockWorkspace.getConfiguration.mockReturnValue({
+      mockGetConfiguration.mockReturnValue({
         get: jest.fn().mockImplementation((key: string) => {
-          if (key === 'mcpClients') {return mcpClients;}
+          if (key === 'mcpClients') {
+            return mcpClients;
+          }
           return undefined;
         }),
       });
@@ -87,9 +91,11 @@ describe('Config', () => {
     });
 
     it('should validate system prompt format', () => {
-      mockWorkspace.getConfiguration.mockReturnValue({
+      mockGetConfiguration.mockReturnValue({
         get: jest.fn().mockImplementation((key: string) => {
-          if (key === 'systemPromptFormat') {return 'invalid_format';}
+          if (key === 'systemPromptFormat') {
+            return 'invalid_format';
+          }
           return undefined;
         }),
       });

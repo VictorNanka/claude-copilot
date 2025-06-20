@@ -38,7 +38,7 @@ describe('System Prompt Processing', () => {
 
     let allSystemContent = '';
     if (config.systemPrompt.trim()) {
-      allSystemContent += `${config.systemPrompt.trim()  }\n\n`;
+      allSystemContent += `${config.systemPrompt.trim()}\n\n`;
     }
 
     if (systemMessages.length > 0) {
@@ -105,9 +105,11 @@ describe('System Prompt Processing', () => {
           },
           {
             role: 'user',
-            content:
-              `${formatSystemPrompt(systemContent, '', 'assistant_acknowledgment') 
-              }\n\nPlease proceed with following these instructions.`,
+            content: `${formatSystemPrompt(
+              systemContent,
+              '',
+              'assistant_acknowledgment'
+            )}\n\nPlease proceed with following these instructions.`,
           },
           ...messages.map(msg => ({
             ...msg,
@@ -125,7 +127,7 @@ describe('System Prompt Processing', () => {
           {
             ...firstMessage,
             role: firstMessage.role === 'system' ? 'user' : firstMessage.role,
-            content: `${systemContent  }\n\n${  content}`,
+            content: `${systemContent}\n\n${content}`,
           },
           ...restMessages,
         ];
