@@ -23,6 +23,7 @@ import {
   ServerInstance,
   ProcessedMessages,
   SystemPromptFormat,
+  MCPCallResult,
 } from './types';
 
 export function newServer(config: Config): ServerInstance {
@@ -131,11 +132,10 @@ async function registerMCPToolsToVSCode(
     };
 
     // Create MCP call handler that routes to the correct client
-    // @ts-ignore - Return type flexibility for MCP integration
     const mcpCallHandler = async (
       name: string,
       params: Record<string, unknown>
-    ): Promise<unknown> => {
+    ): Promise<MCPCallResult> => {
       try {
         const result = await mcpManager.callTool(tool.name, params);
         winstonLogger.info(`MCP tool ${name} executed successfully`);
@@ -220,7 +220,6 @@ function processSystemPrompts(
     allSystemContent.trim(),
     config.systemPromptFormat
   );
-  // @ts-ignore - Message type compatibility
   return {
     messages: processedMessages,
     hasSystemPrompt: true,
@@ -274,10 +273,15 @@ function applySystemPromptFormat(
           role: 'user',
           content: `${formatSystemPrompt(systemContent, '', 'assistant_acknowledgment')}\n\nPlease proceed with following these instructions.`,
         },
-        ...messages.map(msg => ({
-          ...msg,
-          role: msg.role === 'system' ? 'user' : msg.role,
-        })),
+        ...messages.map(msg => {
+          if (msg.role === 'system') {
+            return { ...msg, role: 'user' as const };
+          }
+          if (msg.role === 'tool') {
+            return { ...msg, role: 'user' as const };
+          }
+          return msg;
+        }),
       ];
 
     case 'simple_prepend':
@@ -439,11 +443,10 @@ async function ensureToolsRegistered(toolNames: string[], mcpManager: MCPManager
         parameters: mcpTool.inputSchema || { type: 'object', properties: {}, required: [] },
       };
 
-      // @ts-ignore - Return type flexibility for MCP integration
       const mcpCallHandler = async (
         name: string,
         params: Record<string, unknown>
-      ): Promise<unknown> => {
+      ): Promise<MCPCallResult> => {
         return await mcpManager.callTool(mcpTool.name, params);
       };
 
@@ -906,7 +909,7 @@ function newHonoServer(getConfig: () => Config, mcpManager: MCPManager): Hono {
       winstonLogger.debug('🎯 REQUEST OPTIONS:', requestOptions);
 
       if (body.stream) {
-        return stream(c, async (streamWriter: WritableStreamDefaultWriter<string>) => {
+        return stream(c, async stream => {
           await createRetryableStreamProcessor(
             model,
             chatRequest,
@@ -922,7 +925,7 @@ function newHonoServer(getConfig: () => Config, mcpManager: MCPManager): Hono {
                   },
                 ],
               });
-              await streamWriter.write(`data: ${json}\n\n`);
+              await stream.write(`data: ${json}\n\n`);
             },
             async chunk => {
               const toolCallJson = JSON.stringify({
@@ -946,7 +949,7 @@ function newHonoServer(getConfig: () => Config, mcpManager: MCPManager): Hono {
                   },
                 ],
               });
-              await streamWriter.write(`data: ${toolCallJson}\n\n`);
+              await stream.write(`data: ${toolCallJson}\n\n`);
             },
             async (callId, toolName, result) => {
               let resultText = '';
@@ -979,7 +982,7 @@ function newHonoServer(getConfig: () => Config, mcpManager: MCPManager): Hono {
                     },
                   ],
                 });
-                await streamWriter.write(`data: ${resultJson}\n\n`);
+                await stream.write(`data: ${resultJson}\n\n`);
               }
             }
           );
@@ -1086,8 +1089,8 @@ function newHonoServer(getConfig: () => Config, mcpManager: MCPManager): Hono {
       if (body.stream) {
         const chatResponse = await model.sendRequest(chatRequest, requestOptions);
 
-        return stream(c, async (streamWriter: WritableStreamDefaultWriter<string>) => {
-          await streamWriter.write(
+        return stream(c, async stream => {
+          await stream.write(
             `event: message_start\ndata: {"type":"message_start","message":{"id":"msg_${Date.now()}","type":"message","role":"assistant","model":"${
               model.id
             }","content":[],"stop_reason":null,"stop_sequence":null,"usage":{"input_tokens":0,"output_tokens":0}}}\n\n`
@@ -1104,7 +1107,7 @@ function newHonoServer(getConfig: () => Config, mcpManager: MCPManager): Hono {
                   text: chunk.value,
                 },
               });
-              await streamWriter.write(`event: content_block_delta\ndata: ${json}\n\n`);
+              await stream.write(`event: content_block_delta\ndata: ${json}\n\n`);
             },
             async chunk => {
               const toolUseJson = JSON.stringify({
@@ -1117,7 +1120,7 @@ function newHonoServer(getConfig: () => Config, mcpManager: MCPManager): Hono {
                   input: chunk.input || {},
                 },
               });
-              await streamWriter.write(`event: content_block_delta\ndata: ${toolUseJson}\n\n`);
+              await stream.write(`event: content_block_delta\ndata: ${toolUseJson}\n\n`);
             },
             async (callId, toolName, result) => {
               let resultText = '';
@@ -1136,7 +1139,7 @@ function newHonoServer(getConfig: () => Config, mcpManager: MCPManager): Hono {
                   output: resultText,
                 },
               });
-              await streamWriter.write(`event: content_block_delta\ndata: ${resultJson}\n\n`);
+              await stream.write(`event: content_block_delta\ndata: ${resultJson}\n\n`);
             }
           );
 
