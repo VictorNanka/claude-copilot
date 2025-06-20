@@ -74,13 +74,15 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Enable Corepack
-        run: corepack enable
-        
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20.x'
+
+      - name: Enable Corepack and set Yarn version
+        run: |
+          corepack enable
+          yarn set version 4.1.0
 
       - name: Install dependencies
         run: yarn install --immutable
@@ -104,13 +106,15 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Enable Corepack
-        run: corepack enable
-        
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20.x'
+
+      - name: Enable Corepack and set Yarn version
+        run: |
+          corepack enable
+          yarn set version 4.1.0
 
       - name: Install dependencies
         run: yarn install --immutable
@@ -132,13 +136,15 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Enable Corepack
-        run: corepack enable
-        
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20.x'
+
+      - name: Enable Corepack and set Yarn version
+        run: |
+          corepack enable
+          yarn set version 4.1.0
 
       - name: Install dependencies
         run: yarn install --immutable
@@ -166,13 +172,15 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Enable Corepack
-        run: corepack enable
-        
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20.x'
+
+      - name: Enable Corepack and set Yarn version
+        run: |
+          corepack enable
+          yarn set version 4.1.0
 
       - name: Install dependencies
         run: yarn install --immutable
