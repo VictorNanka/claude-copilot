@@ -51,11 +51,27 @@ jobs:
         run: yarn test:integration
 
       # VS Code extension tests (headless on Linux)
+      - name: Setup display for headless testing (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xvfb dbus-x11
+          export DISPLAY=:99
+          export XDG_RUNTIME_DIR=/run/user/$(id -u)
+          export DBUS_SESSION_BUS_ADDRESS=unix:path=$XDG_RUNTIME_DIR/bus
+          mkdir -p $XDG_RUNTIME_DIR
+          dbus-daemon --session --address=$DBUS_SESSION_BUS_ADDRESS --nofork --nopidfile --syslog-only &
+          Xvfb :99 -screen 0 1920x1080x24 > /dev/null 2>&1 &
+          sleep 3
+          
       - name: Run E2E tests (Linux)
         if: runner.os == 'Linux'
         run: |
           export DISPLAY=:99
-          Xvfb :99 -screen 0 1920x1080x24 &
+          export XDG_RUNTIME_DIR=/run/user/$(id -u)
+          export DBUS_SESSION_BUS_ADDRESS=unix:path=$XDG_RUNTIME_DIR/bus
+          mkdir -p ~/.vscode
+          echo '{ "disable-hardware-acceleration": true }' > ~/.vscode/argv.json
           yarn test:e2e
         env:
           NODE_ENV: test

@@ -1,51 +1,9 @@
 import { claudeToolSignatures } from '../../src/claudeTools';
+import * as vscode from 'vscode';
 
-// Mock VS Code API
-const mockVSCode = {
-  window: {
-    createOutputChannel: jest.fn(() => ({
-      appendLine: jest.fn(),
-      show: jest.fn(),
-    })),
-    showInformationMessage: jest.fn(),
-    showErrorMessage: jest.fn(),
-  },
-  workspace: {
-    onDidChangeConfiguration: jest.fn(),
-    getConfiguration: jest.fn(() => ({
-      get: jest.fn(),
-      update: jest.fn(),
-    })),
-  },
-  commands: {
-    registerCommand: jest.fn(),
-  },
-  lm: {
-    registerTool: jest.fn(() => ({
-      dispose: jest.fn(),
-    })),
-    selectChatModels: jest.fn(() => []),
-    invokeTool: jest.fn(),
-  },
-  LanguageModelChatMessage: jest.fn(),
-  LanguageModelChatMessageRole: {
-    User: 1,
-    Assistant: 2,
-  },
-  LanguageModelTextPart: jest.fn(),
-  LanguageModelToolResult: jest.fn(),
-  LanguageModelChatToolMode: {
-    Auto: 'auto',
-  },
-  CancellationTokenSource: jest.fn(() => ({
-    token: {},
-  })),
-  ExtensionContext: jest.fn(() => ({
-    subscriptions: [],
-  })),
-};
-
-jest.mock('vscode', () => mockVSCode);
+// Use the global VSCode mock (defined in __mocks__/vscode.js)
+// Access the mock for assertions
+const mockVSCode = vscode as jest.Mocked<typeof vscode>;
 
 // Mock the logger module to prevent VS Code dependency issues
 jest.mock('../../src/logger', () => ({

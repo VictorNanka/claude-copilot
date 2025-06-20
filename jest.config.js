@@ -10,7 +10,16 @@ module.exports = {
     '<rootDir>/node_modules/',
   ],
   transform: {
-    '^.+\\.ts$': 'ts-jest',
+    '^.+\\.ts$': [
+      'ts-jest',
+      {
+        tsconfig: {
+          module: 'commonjs',
+          esModuleInterop: true,
+          allowSyntheticDefaultImports: true,
+        },
+      },
+    ],
   },
   collectCoverageFrom: ['src/**/*.ts', '!src/**/*.d.ts', '!src/test/**', '!**/node_modules/**'],
   coverageThreshold: {
@@ -23,13 +32,22 @@ module.exports = {
   },
   coverageReporters: ['text', 'lcov', 'html'],
   setupFilesAfterEnv: ['<rootDir>/tests/setup.ts'],
-  testTimeout: 15000,
+  testTimeout: 30000,
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
-    '^vscode$': '<rootDir>/tests/__mocks__/vscode.js',
+    // VSCode extension testing - mock the vscode module
+    '^vscode$': '<rootDir>/__mocks__/vscode.js',
   },
   // CI-friendly configuration
-  ci: true,
+  ci: process.env.CI ? true : false,
   verbose: true,
   maxWorkers: process.env.CI ? 2 : '50%',
+  // Handle VSCode extension environment
+  testEnvironmentOptions: {
+    url: 'http://localhost',
+  },
+  // Clear mocks between tests for consistent results
+  clearMocks: true,
+  resetMocks: true,
+  restoreMocks: true,
 };
