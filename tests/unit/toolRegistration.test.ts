@@ -36,8 +36,10 @@ jest.mock('../../src/config', () => ({
   })),
 }));
 
-// Import after mocking
-import { registerToolDynamically, addDiscoveredTool, registerMCPTool } from '../../src/extension';
+// Import first
+import * as extensionModule from '../../src/extension';
+const { registerToolDynamically, addDiscoveredTool, registerMCPTool, clearDummyRegistry } =
+  extensionModule;
 
 describe('Tool Registration', () => {
   let mockContext: any;
@@ -47,6 +49,10 @@ describe('Tool Registration', () => {
     mockContext = {
       subscriptions: [],
     };
+    // Mock extension context for all tests using spyOn
+    jest.spyOn(extensionModule, 'getExtensionContext').mockReturnValue(mockContext);
+    // Reset the dummy registry between tests
+    clearDummyRegistry();
   });
 
   describe('Claude Code Tools', () => {
@@ -125,6 +131,9 @@ describe('Tool Registration', () => {
     });
 
     it('should handle registration errors', () => {
+      // Make sure the tool exists first, then mock the error
+      expect(claudeToolSignatures.find(t => t.name === 'Read')).toBeDefined();
+
       mockVSCode.lm.registerTool.mockImplementationOnce(() => {
         throw new Error('Registration failed');
       });
@@ -132,6 +141,7 @@ describe('Tool Registration', () => {
       const result = registerToolDynamically('Read', mockContext);
 
       expect(result).toBe(false);
+      expect(mockVSCode.lm.registerTool).toHaveBeenCalledWith('Read', expect.any(Object));
     });
 
     it('should not register already registered tool', () => {
@@ -214,11 +224,6 @@ describe('Tool Registration', () => {
       content: [{ type: 'text', text: 'MCP result' }],
     });
 
-    beforeEach(() => {
-      // Mock extension context
-      (require('../../src/extension') as any).getExtensionContext = jest.fn(() => mockContext);
-    });
-
     it('should register MCP tool successfully', () => {
       const result = registerMCPTool('mcp:test_tool', mockToolSchema, mockMCPCallHandler);
 
@@ -232,7 +237,7 @@ describe('Tool Registration', () => {
     });
 
     it('should return false when extension context not available', () => {
-      (require('../../src/extension') as any).getExtensionContext = jest.fn(() => undefined);
+      jest.spyOn(extensionModule, 'getExtensionContext').mockReturnValue(undefined);
 
       const result = registerMCPTool('mcp:test_tool', mockToolSchema, mockMCPCallHandler);
 

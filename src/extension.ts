@@ -14,6 +14,11 @@ let extensionContext: ExtensionContext;
 // Global registry for registered Claude Code tools
 const dummyRegistry = new Set<string>();
 
+// Export for testing purposes
+export function clearDummyRegistry(): void {
+  dummyRegistry.clear();
+}
+
 // Get extension context for dynamic registration
 export function getExtensionContext(): ExtensionContext | undefined {
   return extensionContext;
