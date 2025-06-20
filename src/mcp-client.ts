@@ -1,4 +1,4 @@
-// @ts-nocheck
+import { z } from 'zod';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 import {
@@ -8,7 +8,7 @@ import {
   Tool,
 } from '@modelcontextprotocol/sdk/types.js';
 import { logger } from './logger';
-import { MCPClientConfig, MCPTool, MCPCallResult } from './types';
+import { MCPClientConfig, MCPTool, MCPCallResult, JSONSchema } from './types';
 
 // Type for MCP SDK response format
 interface MCPListToolsResponse {
@@ -63,7 +63,7 @@ export class MCPManager {
       const request: MCPRequest = { method: 'tools/list' };
       const response = (await client.request(
         request as ListToolsRequest,
-        {}
+        z.object({})
       )) as MCPListToolsResponse;
 
       if (response.tools && Array.isArray(response.tools)) {
@@ -113,13 +113,21 @@ export class MCPManager {
           arguments: parameters,
         },
       };
-      const result = (await client.request(request as CallToolRequest, {})) as CallToolResult;
+      const result = (await client.request(
+        request as CallToolRequest,
+        z.object({})
+      )) as CallToolResult;
 
       logger.debug(`Tool call result for '${toolName}':`, result);
 
       // Convert to our MCPCallResult format
       const mcpResult: MCPCallResult = {
-        content: result.content || [],
+        content: (result.content || []).map(item => ({
+          type: (item.type || 'text') as 'text' | 'image' | 'resource',
+          text: typeof item.text === 'string' ? item.text : undefined,
+          data: typeof item.data === 'string' ? item.data : undefined,
+          mimeType: typeof item.mimeType === 'string' ? item.mimeType : undefined,
+        })),
         isError: result.isError || false,
       };
 
@@ -135,11 +143,12 @@ export class MCPManager {
     return Array.from(this.tools.values()).map(tool => ({
       name: tool.name,
       description: tool.description || `MCP tool: ${tool.name}`,
-      inputSchema: tool.inputSchema || {
-        type: 'object',
+      inputSchema: {
+        type: (tool.inputSchema?.type || 'object') as string,
         properties: {},
-        required: [],
-      },
+        required: tool.inputSchema?.required || [],
+        ...tool.inputSchema,
+      } as JSONSchema, // Type assertion needed due to MCP SDK compatibility
     }));
   }
 

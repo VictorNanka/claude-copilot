@@ -227,7 +227,6 @@ export interface ToolDiscoveryResult {
 export interface Config {
   port: number;
   startServerAutomatically: boolean;
-  startAutomatically: boolean;
   defaultModel: string;
   systemPrompt: string;
   systemPromptFormat: 'merge' | 'assistant_acknowledgment' | 'simple_prepend';
@@ -274,7 +273,7 @@ export interface MCPConnectionError extends Error {
 export type SystemPromptFormat = 'merge' | 'assistant_acknowledgment' | 'simple_prepend';
 
 export interface ProcessedMessages {
-  messages: OpenAIMessage[] | AnthropicMessage[];
+  messages: Array<OpenAIMessage | AnthropicMessage>;
   hasSystemPrompt: boolean;
   systemContent?: string;
 }
