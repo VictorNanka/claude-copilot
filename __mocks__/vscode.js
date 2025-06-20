@@ -37,9 +37,9 @@ const window = {
 
 const workspace = {
   getConfiguration: jest.fn(() => ({
-    get: jest.fn(),
+    get: jest.fn((key, defaultValue) => defaultValue), // Return the default value when called
     update: jest.fn(),
-    has: jest.fn(),
+    has: jest.fn(() => false),
   })),
   workspaceFolders: [],
   onDidSaveTextDocument: jest.fn(),
