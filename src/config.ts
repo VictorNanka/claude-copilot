@@ -9,11 +9,6 @@ export interface Config {
   port: number;
 
   /**
-   * Start the server automatically when the extension is activated.
-   */
-  startAutomatically: boolean;
-
-  /**
    * Default model to use when the requested model is not available.
    */
   defaultModel: string;
@@ -60,8 +55,7 @@ export function getConfig(): Config {
     : 'merge';
 
   return {
-    port: config.get<number>('port', 68686),
-    startAutomatically: config.get<boolean>('startAutomatically', true),
+    port: config.get<number>('port', 59603),
     defaultModel: config.get<string>('defaultModel', 'gpt-4.1'),
     mcpClients: config.get<Record<string, MCPClientConfig>>('mcpClients', {}),
     systemPrompt: config.get<string>('systemPrompt', ''),

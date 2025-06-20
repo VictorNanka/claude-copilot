@@ -202,7 +202,7 @@ export interface MCPCallResult {
 // ============================================================================
 
 export interface ServerInstance {
-  start(): void;
+  start(): Promise<void>;
   stop(): void;
   updateConfig(config: Config): void;
 }

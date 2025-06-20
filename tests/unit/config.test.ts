@@ -21,8 +21,8 @@ describe('Config', () => {
       mockGetConfiguration.mockReturnValue({
         get: jest.fn().mockImplementation((key: string) => {
           const defaults: any = {
-            port: 68686,
-            startAutomatically: true,
+            port: 59603,
+            startServerAutomatically: true,
             defaultModel: 'gpt-4.1',
             mcpClients: {},
             systemPrompt: '',
@@ -35,8 +35,8 @@ describe('Config', () => {
 
       const config = getConfig();
 
-      expect(config.port).toBe(68686);
-      expect(config.startAutomatically).toBe(true);
+      expect(config.port).toBe(59603);
+      expect(config.startServerAutomatically).toBe(true);
       expect(config.defaultModel).toBe('gpt-4.1');
       expect(config.systemPromptFormat).toBe('merge');
       expect(config.enableSystemPromptProcessing).toBe(true);
@@ -47,7 +47,7 @@ describe('Config', () => {
         get: jest.fn().mockImplementation((key: string) => {
           const custom: any = {
             port: 8080,
-            startAutomatically: false,
+            startServerAutomatically: false,
             defaultModel: 'claude-3.5-sonnet',
             systemPrompt: 'You are a helpful assistant',
             systemPromptFormat: 'assistant_acknowledgment',
@@ -60,7 +60,7 @@ describe('Config', () => {
       const config = getConfig();
 
       expect(config.port).toBe(8080);
-      expect(config.startAutomatically).toBe(false);
+      expect(config.startServerAutomatically).toBe(false);
       expect(config.defaultModel).toBe('claude-3.5-sonnet');
       expect(config.systemPrompt).toBe('You are a helpful assistant');
       expect(config.systemPromptFormat).toBe('assistant_acknowledgment');

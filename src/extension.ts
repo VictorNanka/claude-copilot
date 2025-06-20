@@ -179,7 +179,7 @@ export async function activate(context: ExtensionContext): Promise<void> {
   context.subscriptions.push(startLmApiServerDisposable);
   context.subscriptions.push(stopLmApiServerDisposable);
 
-  if (config.startAutomatically) {
+  if (config.startServerAutomatically) {
     try {
       logToOutput('🌐 Starting HTTP LM API server automatically...');
       await server.start();
