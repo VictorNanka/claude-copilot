@@ -16,6 +16,10 @@ const StatusBarAlignment = {
 };
 
 const window = {
+  createOutputChannel: jest.fn(() => ({
+    appendLine: jest.fn(),
+    show: jest.fn(),
+  })),
   createStatusBarItem: jest.fn(() => ({
     show: jest.fn(),
     hide: jest.fn(),

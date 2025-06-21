@@ -74,7 +74,7 @@ describe('Extension Test Suite', () => {
 
   test('extension can be activated', async () => {
     // Mock the config module directly in the test
-    const configModule = require('../../src/config');
+    const configModule = await import('../../src/config');
     const mockGetConfig = jest.fn().mockReturnValue(mockConfig);
     configModule.getConfig = mockGetConfig;
 
