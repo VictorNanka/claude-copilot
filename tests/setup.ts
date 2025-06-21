@@ -1,54 +1,59 @@
 // Global test setup file
-import 'jest';
+import { vi } from 'vitest';
+
+declare global {
+  // Provide jest compatibility using vitest's vi object
+  var jest: typeof vi;
+}
 
 // Mock VS Code API for unit tests
 const mockVSCode = {
   window: {
-    createOutputChannel: jest.fn(() => ({
-      appendLine: jest.fn(),
-      show: jest.fn(),
+    createOutputChannel: vi.fn(() => ({
+      appendLine: vi.fn(),
+      show: vi.fn(),
     })),
-    showInformationMessage: jest.fn(),
-    showErrorMessage: jest.fn(),
+    showInformationMessage: vi.fn(),
+    showErrorMessage: vi.fn(),
   },
   workspace: {
-    onDidChangeConfiguration: jest.fn(),
-    getConfiguration: jest.fn(() => ({
-      get: jest.fn(),
-      update: jest.fn(),
+    onDidChangeConfiguration: vi.fn(),
+    getConfiguration: vi.fn(() => ({
+      get: vi.fn(),
+      update: vi.fn(),
     })),
   },
   commands: {
-    registerCommand: jest.fn(),
+    registerCommand: vi.fn(),
   },
   lm: {
-    registerTool: jest.fn(() => ({
-      dispose: jest.fn(),
+    registerTool: vi.fn(() => ({
+      dispose: vi.fn(),
     })),
-    selectChatModels: jest.fn(() => []),
-    invokeTool: jest.fn(),
+    selectChatModels: vi.fn(() => []),
+    invokeTool: vi.fn(),
   },
-  LanguageModelChatMessage: jest.fn(),
+  LanguageModelChatMessage: vi.fn(),
   LanguageModelChatMessageRole: {
     User: 1,
     Assistant: 2,
   },
-  LanguageModelTextPart: jest.fn(),
-  LanguageModelToolResult: jest.fn(),
+  LanguageModelTextPart: vi.fn(),
+  LanguageModelToolResult: vi.fn(),
   LanguageModelChatToolMode: {
     Auto: 'auto',
   },
-  CancellationTokenSource: jest.fn(() => ({
+  CancellationTokenSource: vi.fn(() => ({
     token: {},
   })),
-  ExtensionContext: jest.fn(),
+  ExtensionContext: vi.fn(),
 };
 
-// Set up global mocks
-(global as any).vscode = mockVSCode;
+// Set up global mocks and Jest compatibility
+Object.assign(globalThis, { vscode: mockVSCode, jest: vi });
 
 // Mock node-fetch for HTTP testing
-global.fetch = jest.fn();
+global.fetch = vi.fn();
 
 // Set up test environment variables
 process.env.NODE_ENV = 'test';
