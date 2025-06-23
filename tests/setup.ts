@@ -1,54 +1,81 @@
-// Global test setup file
-import 'jest';
+// Global test setup file for Vitest
+import { vi, beforeEach } from 'vitest'
 
 // Mock VS Code API for unit tests
 const mockVSCode = {
   window: {
-    createOutputChannel: jest.fn(() => ({
-      appendLine: jest.fn(),
-      show: jest.fn(),
+    createOutputChannel: vi.fn(() => ({
+      appendLine: vi.fn(),
+      show: vi.fn(),
     })),
-    showInformationMessage: jest.fn(),
-    showErrorMessage: jest.fn(),
+    showInformationMessage: vi.fn(),
+    showErrorMessage: vi.fn(),
+    showQuickPick: vi.fn(),
   },
   workspace: {
-    onDidChangeConfiguration: jest.fn(),
-    getConfiguration: jest.fn(() => ({
-      get: jest.fn(),
-      update: jest.fn(),
+    onDidChangeConfiguration: vi.fn(),
+    getConfiguration: vi.fn(() => ({
+      get: vi.fn(),
+      update: vi.fn(),
     })),
   },
   commands: {
-    registerCommand: jest.fn(),
+    registerCommand: vi.fn(),
+    executeCommand: vi.fn(),
   },
   lm: {
-    registerTool: jest.fn(() => ({
-      dispose: jest.fn(),
+    registerTool: vi.fn(() => ({
+      dispose: vi.fn(),
     })),
-    selectChatModels: jest.fn(() => []),
-    invokeTool: jest.fn(),
+    selectChatModels: vi.fn(() => []),
+    invokeTool: vi.fn(),
+    sendRequest: vi.fn(),
   },
-  LanguageModelChatMessage: jest.fn(),
+  LanguageModelChatMessage: vi.fn(),
   LanguageModelChatMessageRole: {
     User: 1,
     Assistant: 2,
   },
-  LanguageModelTextPart: jest.fn(),
-  LanguageModelToolResult: jest.fn(),
+  LanguageModelTextPart: vi.fn(),
+  LanguageModelToolResult: vi.fn(),
   LanguageModelChatToolMode: {
     Auto: 'auto',
   },
-  CancellationTokenSource: jest.fn(() => ({
+  LanguageModelChatRequestOptions: vi.fn(),
+  CancellationTokenSource: vi.fn(() => ({
     token: {},
   })),
-  ExtensionContext: jest.fn(),
+  ExtensionContext: vi.fn(),
+  Uri: {
+    parse: vi.fn(),
+  },
+  env: {
+    openExternal: vi.fn(),
+  },
+  version: '1.99.0',
 };
 
-// Set up global mocks
-(global as any).vscode = mockVSCode;
+// Mock the vscode module before any imports
+vi.doMock('vscode', () => mockVSCode, { virtual: true });
 
 // Mock node-fetch for HTTP testing
-global.fetch = jest.fn();
+vi.stubGlobal('fetch', vi.fn());
+
+// Mock console methods to reduce noise in tests
+vi.stubGlobal('console', {
+  ...console,
+  log: vi.fn(),
+  warn: vi.fn(),
+  error: vi.fn(),
+  info: vi.fn(),
+  debug: vi.fn(),
+});
 
 // Set up test environment variables
 process.env.NODE_ENV = 'test';
+
+// Global test hooks
+beforeEach(() => {
+  // Clear all mocks before each test
+  vi.clearAllMocks();
+});

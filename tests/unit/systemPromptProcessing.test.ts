@@ -1,3 +1,4 @@
+import { describe, it, expect } from 'vitest';
 import { Config } from '../../src/config';
 
 // We'll need to extract the system prompt processing functions from server.ts

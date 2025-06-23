@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, jest } from '@jest/globals';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 
 // Type definitions
 interface ToolParameters {
@@ -41,13 +41,13 @@ interface TestPayload {
 }
 
 // Mock fetch
-global.fetch = jest.fn();
+global.fetch = vi.fn();
 
 describe('Claude Code Tool Verification Tests', () => {
   let originalFetch: any;
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     originalFetch = global.fetch;
   });
 
@@ -116,7 +116,7 @@ describe('Claude Code Tool Verification Tests', () => {
         })),
       };
 
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
+      (global.fetch as vi.Mock).mockResolvedValueOnce({
         ok: true,
         json: () => Promise.resolve(mockToolsResponse),
       });
@@ -157,7 +157,7 @@ describe('Claude Code Tool Verification Tests', () => {
         ],
       };
 
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
+      (global.fetch as vi.Mock).mockResolvedValueOnce({
         ok: true,
         json: () => Promise.resolve(mockToolsResponse),
       });
@@ -176,7 +176,7 @@ describe('Claude Code Tool Verification Tests', () => {
     });
 
     it('should handle server errors when fetching tools', async () => {
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
+      (global.fetch as vi.Mock).mockResolvedValueOnce({
         ok: false,
         status: 500,
         statusText: 'Internal Server Error',
@@ -297,7 +297,7 @@ describe('Claude Code Tool Verification Tests', () => {
         stream: false,
       };
 
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
+      (global.fetch as vi.Mock).mockResolvedValueOnce({
         ok: true,
         json: () =>
           Promise.resolve({
@@ -349,7 +349,7 @@ describe('Claude Code Tool Verification Tests', () => {
         stream: false,
       };
 
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
+      (global.fetch as vi.Mock).mockResolvedValueOnce({
         ok: false,
         status: 400,
         statusText: 'Bad Request',
@@ -389,7 +389,7 @@ describe('Claude Code Tool Verification Tests', () => {
         })),
       };
 
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
+      (global.fetch as vi.Mock).mockResolvedValueOnce({
         ok: true,
         json: () => Promise.resolve(mockCompleteToolsResponse),
       });
@@ -441,7 +441,7 @@ describe('Claude Code Tool Verification Tests', () => {
         })),
       };
 
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
+      (global.fetch as vi.Mock).mockResolvedValueOnce({
         ok: true,
         json: () => Promise.resolve(partialToolsResponse),
       });

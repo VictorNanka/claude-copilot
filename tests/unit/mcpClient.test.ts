@@ -1,24 +1,25 @@
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { MCPManager, MCPClientConfig } from '../../src/mcp-client';
 
 // Mock the MCP SDK
-jest.mock('@modelcontextprotocol/sdk/client/index.js', () => ({
-  Client: jest.fn().mockImplementation(() => ({
-    connect: jest.fn(),
-    request: jest.fn(),
-    close: jest.fn(),
+vi.mock('@modelcontextprotocol/sdk/client/index.js', () => ({
+  Client: vi.fn().mockImplementation(() => ({
+    connect: vi.fn(),
+    request: vi.fn(),
+    close: vi.fn(),
   })),
 }));
 
-jest.mock('@modelcontextprotocol/sdk/client/stdio.js', () => ({
-  StdioClientTransport: jest.fn(),
+vi.mock('@modelcontextprotocol/sdk/client/stdio.js', () => ({
+  StdioClientTransport: vi.fn(),
 }));
 
 // Mock winston logger
-jest.mock('../../src/logger', () => ({
+vi.mock('../../src/logger', () => ({
   logger: {
-    info: jest.fn(),
-    error: jest.fn(),
-    debug: jest.fn(),
+    info: vi.fn(),
+    error: vi.fn(),
+    debug: vi.fn(),
   },
 }));
 
@@ -26,19 +27,19 @@ describe('MCPManager', () => {
   let mcpManager: MCPManager;
   let mockClient: any;
 
-  beforeEach(() => {
-    jest.clearAllMocks();
+  beforeEach(async () => {
+    vi.clearAllMocks();
     mcpManager = new MCPManager();
 
     // Mock client instance
     mockClient = {
-      connect: jest.fn(),
-      request: jest.fn(),
-      close: jest.fn(),
+      connect: vi.fn(),
+      request: vi.fn(),
+      close: vi.fn(),
     };
 
-    const { Client: clientClass } = require('@modelcontextprotocol/sdk/client/index.js');
-    clientClass.mockImplementation(() => mockClient);
+    const { Client } = await import('@modelcontextprotocol/sdk/client/index.js');
+    vi.mocked(Client).mockImplementation(() => mockClient);
   });
 
   describe('addClient', () => {

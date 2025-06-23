@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, jest } from '@jest/globals';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
 // Interface definitions
 interface ToolParameter {
@@ -52,13 +52,13 @@ interface StreamChunk {
 }
 
 // Mock fetch for testing
-global.fetch = jest.fn();
+global.fetch = vi.fn();
 
 describe('Runtime Tool Discovery Tests', () => {
   let originalFetch: any;
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     originalFetch = global.fetch;
   });
 
@@ -119,7 +119,7 @@ describe('Runtime Tool Discovery Tests', () => {
         ok: true,
         body: {
           getReader: () => ({
-            read: jest
+            read: vi
               .fn()
               .mockResolvedValueOnce({
                 done: false,
@@ -141,7 +141,7 @@ describe('Runtime Tool Discovery Tests', () => {
         },
       };
 
-      (global.fetch as jest.Mock).mockResolvedValueOnce(mockStreamResponse);
+      (global.fetch as vi.Mock).mockResolvedValueOnce(mockStreamResponse);
 
       const response = await fetch('http://localhost:3000/chat/completions', {
         method: 'POST',
@@ -163,7 +163,7 @@ describe('Runtime Tool Discovery Tests', () => {
     });
 
     it('should handle discovery failures gracefully', async () => {
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
+      (global.fetch as vi.Mock).mockResolvedValueOnce({
         ok: false,
         status: 400,
         statusText: 'Bad Request',
@@ -286,11 +286,11 @@ describe('Runtime Tool Discovery Tests', () => {
         stream: true,
       };
 
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
+      (global.fetch as vi.Mock).mockResolvedValueOnce({
         ok: true,
         body: {
           getReader: () => ({
-            read: jest
+            read: vi
               .fn()
               .mockResolvedValueOnce({
                 done: false,
@@ -337,7 +337,7 @@ describe('Runtime Tool Discovery Tests', () => {
 
   describe('Error Handling', () => {
     it('should handle network errors during discovery', async () => {
-      (global.fetch as jest.Mock).mockRejectedValueOnce(new Error('Network error'));
+      (global.fetch as vi.Mock).mockRejectedValueOnce(new Error('Network error'));
 
       await expect(
         fetch('http://localhost:3000/chat/completions', {
