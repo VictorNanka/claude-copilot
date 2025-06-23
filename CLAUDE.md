@@ -80,12 +80,14 @@ yarn dev             # Development mode (alias for watch)
 **Testing & Quality**
 
 ```bash
-yarn test            # Run E2E tests via VS Code test runner
-yarn test:unit       # Run unit tests with Jest
-yarn test:integration # Run integration tests with Jest
+yarn test            # Run unit and integration tests with Vitest
+yarn test:unit       # Run unit tests with Vitest
+yarn test:integration # Run integration tests with Vitest
 yarn test:e2e        # Run E2E tests with VS Code test runner
 yarn test:all        # Run all test suites
 yarn test:coverage   # Run tests with coverage report
+yarn test:ui         # Run tests with Vitest UI
+yarn test:watch      # Run tests in watch mode
 yarn pretest         # Run compile + lint before testing
 yarn lint            # ESLint with TypeScript rules
 yarn format          # Format code with Prettier
@@ -147,10 +149,16 @@ Configure MCP clients in VS Code settings:
 
 ### Test Framework
 
-- **Jest** - Unit and integration testing with TypeScript support
+- **Vitest** - Unit and integration testing with TypeScript support and native ESM
 - **VS Code Test Runner** - E2E extension testing
 - **Coverage Threshold** - Minimum thresholds: 20% branches, 25% functions, 30% lines/statements
 - **Pre-commit Hooks** - Automatic linting, formatting, and quality checks via Husky
+
+### Recent Migration Notes
+
+- **Jest → Vitest Migration**: Recently migrated from Jest to Vitest for improved performance and ESM compatibility
+- **Test Syntax**: All tests now use `vi.fn()` instead of `jest.fn()` for mocking
+- **Configuration**: Tests configured via `vitest.config.ts` with TypeScript support
 
 ### Test Structure
 
@@ -176,12 +184,14 @@ Configure MCP clients in VS Code settings:
 ### Test Commands
 
 ```bash
-yarn test:unit            # Unit tests
-yarn test:integration     # Integration tests
-yarn test:e2e            # E2E tests
+yarn test:unit            # Unit tests with Vitest
+yarn test:integration     # Integration tests with Vitest
+yarn test:e2e            # E2E tests with VS Code test runner
 yarn test:all             # Run all test suites
 yarn test:coverage        # Tests with coverage
+yarn test:coverage:ci     # CI-friendly coverage with verbose output
 yarn test:watch           # Watch mode for tests
+yarn test:ui              # Interactive UI for test debugging
 yarn lint                 # Code linting
 yarn format               # Code formatting
 yarn format:check         # Check code formatting
