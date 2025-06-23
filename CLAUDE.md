@@ -71,23 +71,32 @@ Claude Copilot is a VS Code extension that provides an intelligent AI assistant 
 **Build & Compilation**
 
 ```bash
-npm run compile          # Compile TypeScript to JavaScript
-npm run watch           # Watch mode compilation
+yarn compile          # Compile TypeScript to JavaScript
+yarn watch           # Watch mode compilation
+yarn build           # Build the project (alias for compile)
+yarn dev             # Development mode (alias for watch)
 ```
 
 **Testing & Quality**
 
 ```bash
-npm run test            # Run all tests via VS Code test runner
-npm run pretest         # Run compile + lint before testing
-npm run lint            # ESLint with TypeScript rules
+yarn test            # Run E2E tests via VS Code test runner
+yarn test:unit       # Run unit tests with Jest
+yarn test:integration # Run integration tests with Jest
+yarn test:e2e        # Run E2E tests with VS Code test runner
+yarn test:all        # Run all test suites
+yarn test:coverage   # Run tests with coverage report
+yarn pretest         # Run compile + lint before testing
+yarn lint            # ESLint with TypeScript rules
+yarn format          # Format code with Prettier
 ```
 
 **VS Code Extension**
 
 ```bash
-npm run vscode:prepublish  # Prepare for publishing (runs compile)
-npm run vscode:publish     # Publish to VS Code marketplace
+yarn vscode:prepublish  # Prepare for publishing (runs compile)
+yarn vscode:publish     # Publish to VS Code marketplace
+yarn vscode:package     # Package extension as .vsix file
 ```
 
 ## Extension Settings
@@ -140,8 +149,8 @@ Configure MCP clients in VS Code settings:
 
 - **Jest** - Unit and integration testing with TypeScript support
 - **VS Code Test Runner** - E2E extension testing
-- **Coverage Threshold** - 80% minimum across branches, functions, lines, statements
-- **Pre-commit Hooks** - Automatic linting, formatting, and quality checks
+- **Coverage Threshold** - Minimum thresholds: 20% branches, 25% functions, 30% lines/statements
+- **Pre-commit Hooks** - Automatic linting, formatting, and quality checks via Husky
 
 ### Test Structure
 
@@ -167,10 +176,13 @@ Configure MCP clients in VS Code settings:
 ### Test Commands
 
 ```bash
-npm run test:unit            # Unit tests
-npm run test:integration     # Integration tests
-npm run test:e2e            # E2E tests
-npm run test:coverage       # Tests with coverage
-npm run lint                # Code linting
-npm run format              # Code formatting
+yarn test:unit            # Unit tests
+yarn test:integration     # Integration tests
+yarn test:e2e            # E2E tests
+yarn test:all             # Run all test suites
+yarn test:coverage        # Tests with coverage
+yarn test:watch           # Watch mode for tests
+yarn lint                 # Code linting
+yarn format               # Code formatting
+yarn format:check         # Check code formatting
 ```

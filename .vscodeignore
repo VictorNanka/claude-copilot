@@ -17,7 +17,6 @@ vsc-extension-quickstart.md
 **/*.ts
 **/.vscode-test.*
 .github/**
-node_modules/**
 coverage/**
 *.tsbuildinfo
 .husky/**

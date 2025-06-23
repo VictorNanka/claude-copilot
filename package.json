@@ -16,6 +16,8 @@
   "categories": [
     "Other"
   ],
+  "extensionDependencies": [],
+  "extensionPack": [],
   "// TODO: This event prefer ?": "",
   "activationEvents": [
     "onStartupFinished"
@@ -166,7 +168,7 @@
     "test:coverage": "jest --coverage",
     "test:coverage:ci": "jest --coverage --ci --watchAll=false",
     "prepare": "husky",
-    "vscode:package": "vsce package --no-yarn",
+    "vscode:package": "vsce package --yarn",
     "vscode:publish": "vsce publish --no-yarn",
     "build": "yarn compile",
     "dev": "yarn watch",

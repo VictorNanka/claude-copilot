@@ -29,31 +29,109 @@ import {
 export function newServer(config: Config): ServerInstance {
   const mcpManager = new MCPManager();
   const server = newHonoServer(() => config, mcpManager);
-  let startedServer: { stop(): void } | undefined;
+  let startedServer: { stop(): void; port: number } | undefined;
 
   // Initialize MCP clients
   initializeMCPClients(mcpManager, config);
+
+  // Check if port is available
+  const isPortAvailable = async (port: number): Promise<boolean> => {
+    return new Promise(resolve => {
+      const net = require('net');
+      const testServer = net.createServer();
+      
+      testServer.listen(port, '127.0.0.1', () => {
+        testServer.close(() => resolve(true));
+      });
+      
+      testServer.on('error', () => resolve(false));
+    });
+  };
+
+  // Verify server is actually running
+  const verifyServerRunning = async (port: number): Promise<boolean> => {
+    try {
+      const fetch = require('node-fetch');
+      const response = await fetch(`http://localhost:${port}/`, { 
+        timeout: 1000,
+        method: 'GET'
+      });
+      return response.ok;
+    } catch {
+      return false;
+    }
+  };
 
   return {
     start: async (): Promise<void> => {
       const port = config.port;
       if (startedServer) {
-        vscode.window.showInformationMessage('LM API server is already running');
-        return;
+        const isRunning = await verifyServerRunning(startedServer.port);
+        if (isRunning) {
+          vscode.window.showInformationMessage('LM API server is already running');
+          return;
+        } else {
+          // Server was marked as running but isn't responding, reset it
+          winstonLogger.warn('Server was marked as running but not responding, restarting...');
+          startedServer = undefined;
+        }
+      }
+
+      // Check if port is available
+      const portAvailable = await isPortAvailable(port);
+      if (!portAvailable) {
+        const message = `Port ${port} is already in use. Please change the port in settings or stop the conflicting service.`;
+        winstonLogger.error(message);
+        vscode.window.showErrorMessage(message);
+        throw new Error(message);
       }
 
       try {
+        winstonLogger.info(`Starting HTTP LM API server on port ${port}...`);
+        
         const { serve } = require('@hono/node-server');
-        startedServer = serve({
+        
+        // Start the server and get the server instance
+        const serverInstance = serve({
           fetch: server.fetch,
           port,
+          hostname: '127.0.0.1', // Bind to localhost only for security
         });
 
-        // Give the server a moment to start and check if it's actually listening
-        await new Promise(resolve => setTimeout(resolve, 100));
+        // Wait for server to be ready with proper verification
+        let retries = 0;
+        const maxRetries = 10;
+        let serverReady = false;
+        
+        while (retries < maxRetries && !serverReady) {
+          await new Promise(resolve => setTimeout(resolve, 200));
+          serverReady = await verifyServerRunning(port);
+          retries++;
+        }
+
+        if (!serverReady) {
+          // If server still not ready, try to stop it and throw error
+          try {
+            if (serverInstance && typeof serverInstance.stop === 'function') {
+              serverInstance.stop();
+            }
+          } catch (stopError) {
+            winstonLogger.warn('Error stopping failed server:', stopError);
+          }
+          throw new Error(`Server failed to start properly after ${maxRetries} attempts`);
+        }
+
+        startedServer = {
+          stop: (): void => {
+            if (serverInstance && typeof serverInstance.stop === 'function') {
+              serverInstance.stop();
+            }
+          },
+          port: port
+        };
 
         winstonLogger.info(`HTTP LM API server started successfully on port ${port}`);
-        vscode.window.showInformationMessage(`LM API server is running on port ${port}`);
+        vscode.window.showInformationMessage(`LM API server is running on http://localhost:${port}`);
       } catch (error: unknown) {
         const errorMessage = error instanceof Error ? error.message : String(error);
         winstonLogger.error(`Failed to start HTTP LM API server on port ${port}: ${errorMessage}`);
@@ -75,12 +153,24 @@ export function newServer(config: Config): ServerInstance {
     },
     stop: (): void => {
       if (startedServer) {
-        startedServer.stop();
-        vscode.window.showInformationMessage('LM API server stopped');
+        try {
+          startedServer.stop();
+          winstonLogger.info('HTTP LM API server stopped');
+          vscode.window.showInformationMessage('LM API server stopped');
+        } catch (error: unknown) {
+          const errorMessage = error instanceof Error ? error.message : String(error);
+          winstonLogger.error(`Error stopping server: ${errorMessage}`);
+        }
         startedServer = undefined;
       } else {
         vscode.window.showInformationMessage('LM API server is not running');
       }
+    },
+    isRunning: async (): Promise<boolean> => {
+      if (!startedServer) {
+        return false;
+      }
+      return await verifyServerRunning(startedServer.port);
     },
     updateConfig: (newConfig: Config): void => {
       initializeMCPClients(mcpManager, newConfig);

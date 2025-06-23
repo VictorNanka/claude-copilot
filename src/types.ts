@@ -204,6 +204,7 @@ export interface MCPCallResult {
 export interface ServerInstance {
   start(): Promise<void>;
   stop(): void;
+  isRunning(): Promise<boolean>;
   updateConfig(config: Config): void;
 }
 
