@@ -169,7 +169,7 @@
     "test:coverage": "vitest run --coverage",
     "test:coverage:ci": "vitest run --coverage --reporter=verbose --reporter=junit --outputFile=coverage/junit.xml",
     "prepare": "husky",
-    "vscode:package": "vsce package --yarn",
+    "vscode:package": "vsce package --no-yarn",
     "vscode:publish": "vsce publish --no-yarn",
     "build": "yarn compile",
     "dev": "yarn watch",
