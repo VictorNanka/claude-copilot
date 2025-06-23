@@ -39,11 +39,11 @@ export function newServer(config: Config): ServerInstance {
     return new Promise(resolve => {
       const net = require('net');
       const testServer = net.createServer();
-      
+
       testServer.listen(port, '127.0.0.1', () => {
         testServer.close(() => resolve(true));
       });
-      
+
       testServer.on('error', () => resolve(false));
     });
   };
@@ -52,9 +52,9 @@ export function newServer(config: Config): ServerInstance {
   const verifyServerRunning = async (port: number): Promise<boolean> => {
     try {
       const fetch = require('node-fetch');
-      const response = await fetch(`http://localhost:${port}/`, { 
+      const response = await fetch(`http://localhost:${port}/`, {
         timeout: 1000,
-        method: 'GET'
+        method: 'GET',
       });
       return response.ok;
     } catch {
@@ -88,9 +88,9 @@ export function newServer(config: Config): ServerInstance {
 
       try {
         winstonLogger.info(`Starting HTTP LM API server on port ${port}...`);
-        
+
         const { serve } = require('@hono/node-server');
-        
+
         // Start the server and get the server instance
         const serverInstance = serve({
           fetch: server.fetch,
@@ -102,7 +102,7 @@ export function newServer(config: Config): ServerInstance {
         let retries = 0;
         const maxRetries = 10;
         let serverReady = false;
-        
+
         while (retries < maxRetries && !serverReady) {
           await new Promise(resolve => setTimeout(resolve, 200));
           serverReady = await verifyServerRunning(port);
@@ -127,11 +127,13 @@ export function newServer(config: Config): ServerInstance {
               serverInstance.stop();
             }
           },
-          port: port
+          port: port,
         };
 
         winstonLogger.info(`HTTP LM API server started successfully on port ${port}`);
-        vscode.window.showInformationMessage(`LM API server is running on http://localhost:${port}`);
+        vscode.window.showInformationMessage(
+          `LM API server is running on http://localhost:${port}`
+        );
       } catch (error: unknown) {
         const errorMessage = error instanceof Error ? error.message : String(error);
         winstonLogger.error(`Failed to start HTTP LM API server on port ${port}: ${errorMessage}`);
