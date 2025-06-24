@@ -12,7 +12,7 @@
     "vscode": "^1.99.0",
     "node": ">=18.0.0"
   },
-  "packageManager": "yarn@4.1.0",
+  "packageManager": "bun@1.1.42",
   "categories": [
     "Other"
   ],
@@ -151,10 +151,10 @@
     }
   },
   "scripts": {
-    "vscode:prepublish": "npm run compile",
+    "vscode:prepublish": "bun run compile",
     "compile": "tsc -p ./tsconfig.build.json",
     "watch": "tsc -watch -p ./",
-    "pretest": "yarn compile && yarn lint",
+    "pretest": "bun run compile && bun run lint",
     "lint": "eslint src --fix",
     "lint:check": "eslint src",
     "format": "prettier --write \"src/**/*.ts\" \"tests/**/*.ts\"",
@@ -163,7 +163,7 @@
     "test:unit": "vitest run tests/unit",
     "test:integration": "vitest run tests/integration",
     "test:e2e": "vscode-test",
-    "test:all": "yarn test:unit && yarn test:integration && yarn test:e2e",
+    "test:all": "bun run test:unit && bun run test:integration && bun run test:e2e",
     "test:watch": "vitest",
     "test:ui": "vitest --ui",
     "test:coverage": "vitest run --coverage",
@@ -174,7 +174,7 @@
     "build": "yarn compile",
     "dev": "yarn watch",
     "clean": "rm -rf out node_modules/.cache",
-    "reinstall": "rm -rf node_modules yarn.lock && yarn install"
+    "reinstall": "rm -rf node_modules bun.lockb && bun install"
   },
   "devDependencies": {
     "@types/node": "20.x",
