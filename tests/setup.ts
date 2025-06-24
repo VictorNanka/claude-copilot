@@ -1,5 +1,5 @@
 // Global test setup file for Vitest
-import { vi, beforeEach } from 'vitest'
+import { vi, beforeEach } from 'vitest';
 
 // Mock VS Code API for unit tests
 const mockVSCode = {
