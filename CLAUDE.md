@@ -71,10 +71,10 @@ Claude Copilot is a VS Code extension that provides an intelligent AI assistant 
 **Build & Compilation**
 
 ```bash
-yarn compile          # Compile TypeScript to JavaScript
-yarn watch           # Watch mode compilation
-yarn build           # Build the project (alias for compile)
-yarn dev             # Development mode (alias for watch)
+bun run compile          # Compile TypeScript to JavaScript
+bun run watch           # Watch mode compilation
+bun run build           # Build the project (alias for compile)
+bun run dev             # Development mode (alias for watch)
 ```
 
 **Testing & Quality**
@@ -94,10 +94,23 @@ yarn format          # Format code with Prettier
 **VS Code Extension**
 
 ```bash
-yarn vscode:prepublish  # Prepare for publishing (runs compile)
-yarn vscode:publish     # Publish to VS Code marketplace
-yarn vscode:package     # Package extension as .vsix file
+bun run vscode:prepublish  # Prepare for publishing (runs compile)
+bun run vscode:publish     # Publish to VS Code marketplace
+bun run vscode:package     # Package extension as .vsix file
 ```
+
+## Bun Configuration
+
+This project uses Bun as the package manager and runtime for improved performance:
+
+- **Fast Installation** - Bun installs packages significantly faster than npm/yarn
+- **Built-in TypeScript Support** - Native TypeScript execution without compilation
+- **Compatible Scripts** - All existing npm scripts work seamlessly with `bun run`
+- **Lockfile** - Uses `bun.lockb` for deterministic dependency resolution
+- **Runtime** - Can execute JavaScript/TypeScript files directly with `bun run`
+
+To install dependencies: `bun install`
+To add new packages: `bun add <package>` or `bun add -d <package>` for dev dependencies
 
 ## Extension Settings
 
