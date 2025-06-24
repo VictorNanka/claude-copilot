@@ -5,31 +5,31 @@ import { Hono } from 'hono';
 // Mock VS Code API
 const mockVSCode = {
   lm: {
-    selectChatModels: jest.fn(() => [
+    selectChatModels: vi.fn(() => [
       { id: 'gpt-4', name: 'GPT-4' },
       { id: 'claude-3.5-sonnet', name: 'Claude 3.5 Sonnet' },
     ]),
   },
-  LanguageModelChatMessage: jest.fn(),
+  LanguageModelChatMessage: vi.fn(),
   LanguageModelChatMessageRole: {
     User: 1,
     Assistant: 2,
   },
-  LanguageModelTextPart: jest.fn(),
-  LanguageModelToolResult: jest.fn(),
+  LanguageModelTextPart: vi.fn(),
+  LanguageModelToolResult: vi.fn(),
   LanguageModelChatToolMode: {
     Auto: 'auto',
   },
 };
 
-jest.mock('vscode', () => mockVSCode);
+vi.mock('vscode', () => mockVSCode);
 
 // Mock logger
-jest.mock('../../src/logger', () => ({
+vi.mock('../../src/logger', () => ({
   logger: {
-    info: jest.fn(),
-    error: jest.fn(),
-    warn: jest.fn(),
+    info: vi.fn(),
+    error: vi.fn(),
+    warn: vi.fn(),
   },
 }));
 
@@ -43,7 +43,7 @@ describe('API Endpoints Integration Tests', () => {
   // let mcpManager: MCPManager;
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
 
     // mockConfig = {
     //   port: 68686,

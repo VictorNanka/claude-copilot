@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, jest } from '@jest/globals';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 
 // Interface definitions
 interface ToolFunction {
@@ -25,15 +25,15 @@ interface TestPayload {
 }
 
 // Mock fetch for testing
-global.fetch = jest.fn();
+global.fetch = vi.fn();
 
 describe('Dynamic Tool Registration Integration', () => {
   let originalFetch: any;
 
   beforeEach(() => {
     originalFetch = global.fetch;
-    global.fetch = jest.fn();
-    jest.clearAllMocks();
+    global.fetch = vi.fn();
+    vi.clearAllMocks();
   });
 
   afterEach(() => {
@@ -93,7 +93,7 @@ describe('Dynamic Tool Registration Integration', () => {
         ok: true,
         body: {
           getReader: () => ({
-            read: jest
+            read: vi
               .fn()
               .mockResolvedValueOnce({
                 done: false,
@@ -115,7 +115,7 @@ describe('Dynamic Tool Registration Integration', () => {
         },
       };
 
-      (global.fetch as jest.Mock).mockResolvedValueOnce(mockStreamResponse);
+      (global.fetch as vi.Mock).mockResolvedValueOnce(mockStreamResponse);
 
       const response = await fetch('http://localhost:3000/chat/completions', {
         method: 'POST',
@@ -137,7 +137,7 @@ describe('Dynamic Tool Registration Integration', () => {
     });
 
     it('should handle tool registration failures gracefully', async () => {
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
+      (global.fetch as vi.Mock).mockResolvedValueOnce({
         ok: false,
         status: 400,
         statusText: 'Bad Request',
@@ -207,7 +207,7 @@ describe('Dynamic Tool Registration Integration', () => {
 
   describe('Error Handling', () => {
     it('should handle network errors during registration', async () => {
-      (global.fetch as jest.Mock).mockRejectedValueOnce(new Error('Network error'));
+      (global.fetch as vi.Mock).mockRejectedValueOnce(new Error('Network error'));
 
       await expect(
         fetch('http://localhost:3000/chat/completions', {
@@ -226,7 +226,7 @@ describe('Dynamic Tool Registration Integration', () => {
         // Missing messages and tools
       };
 
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
+      (global.fetch as vi.Mock).mockResolvedValueOnce({
         ok: false,
         status: 422,
         statusText: 'Unprocessable Entity',

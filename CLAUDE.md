@@ -71,33 +71,48 @@ Claude Copilot is a VS Code extension that provides an intelligent AI assistant 
 **Build & Compilation**
 
 ```bash
-yarn compile          # Compile TypeScript to JavaScript
-yarn watch           # Watch mode compilation
-yarn build           # Build the project (alias for compile)
-yarn dev             # Development mode (alias for watch)
+bun run compile          # Compile TypeScript to JavaScript
+bun run watch           # Watch mode compilation
+bun run build           # Build the project (alias for compile)
+bun run dev             # Development mode (alias for watch)
 ```
 
 **Testing & Quality**
 
 ```bash
-yarn test            # Run E2E tests via VS Code test runner
-yarn test:unit       # Run unit tests with Jest
-yarn test:integration # Run integration tests with Jest
-yarn test:e2e        # Run E2E tests with VS Code test runner
-yarn test:all        # Run all test suites
-yarn test:coverage   # Run tests with coverage report
-yarn pretest         # Run compile + lint before testing
-yarn lint            # ESLint with TypeScript rules
-yarn format          # Format code with Prettier
+bun test            # Run unit and integration tests with Vitest
+bun run test:unit       # Run unit tests with Vitest
+bun run test:integration # Run integration tests with Vitest
+bun run test:e2e        # Run E2E tests with VS Code test runner
+bun run test:all        # Run all test suites
+bun run test:coverage   # Run tests with coverage report
+bun run test:ui         # Run tests with Vitest UI
+bun run test:watch      # Run tests in watch mode
+bun run pretest         # Run compile + lint before testing
+bun run lint            # ESLint with TypeScript rules
+bun run format          # Format code with Prettier
 ```
 
 **VS Code Extension**
 
 ```bash
-yarn vscode:prepublish  # Prepare for publishing (runs compile)
-yarn vscode:publish     # Publish to VS Code marketplace
-yarn vscode:package     # Package extension as .vsix file
+bun run vscode:prepublish  # Prepare for publishing (runs compile)
+bun run vscode:publish     # Publish to VS Code marketplace
+bun run vscode:package     # Package extension as .vsix file
 ```
+
+## Bun Configuration
+
+This project uses Bun as the package manager and runtime for improved performance:
+
+- **Fast Installation** - Bun installs packages significantly faster than npm/yarn
+- **Built-in TypeScript Support** - Native TypeScript execution without compilation
+- **Compatible Scripts** - All existing npm scripts work seamlessly with `bun run`
+- **Lockfile** - Uses `bun.lockb` for deterministic dependency resolution
+- **Runtime** - Can execute JavaScript/TypeScript files directly with `bun run`
+
+To install dependencies: `bun install`
+To add new packages: `bun add <package>` or `bun add -d <package>` for dev dependencies
 
 ## Extension Settings
 
@@ -147,10 +162,18 @@ Configure MCP clients in VS Code settings:
 
 ### Test Framework
 
-- **Jest** - Unit and integration testing with TypeScript support
+- **Vitest** - Unit and integration testing with TypeScript support and native ESM
 - **VS Code Test Runner** - E2E extension testing
 - **Coverage Threshold** - Minimum thresholds: 20% branches, 25% functions, 30% lines/statements
 - **Pre-commit Hooks** - Automatic linting, formatting, and quality checks via Husky
+
+### Recent Migration Notes
+
+- **Yarn → Bun Migration**: Recently migrated from Yarn to Bun for significantly faster package management, improved performance, and better TypeScript support
+- **Jest → Vitest Migration**: Previously migrated from Jest to Vitest for improved performance and ESM compatibility
+- **Test Syntax**: All tests now use `vi.fn()` instead of `jest.fn()` for mocking
+- **Configuration**: Tests configured via `vitest.config.ts` with TypeScript support
+- **Package Manager**: Bun provides faster dependency installation, built-in bundling, and native TypeScript execution
 
 ### Test Structure
 
@@ -176,13 +199,15 @@ Configure MCP clients in VS Code settings:
 ### Test Commands
 
 ```bash
-yarn test:unit            # Unit tests
-yarn test:integration     # Integration tests
-yarn test:e2e            # E2E tests
-yarn test:all             # Run all test suites
-yarn test:coverage        # Tests with coverage
-yarn test:watch           # Watch mode for tests
-yarn lint                 # Code linting
-yarn format               # Code formatting
-yarn format:check         # Check code formatting
+bun run test:unit            # Unit tests with Vitest
+bun run test:integration     # Integration tests with Vitest
+bun run test:e2e            # E2E tests with VS Code test runner
+bun run test:all             # Run all test suites
+bun run test:coverage        # Tests with coverage
+bun run test:coverage:ci     # CI-friendly coverage with verbose output
+bun run test:watch           # Watch mode for tests
+bun run test:ui              # Interactive UI for test debugging
+bun run lint                 # Code linting
+bun run format               # Code formatting
+bun run format:check         # Check code formatting
 ```

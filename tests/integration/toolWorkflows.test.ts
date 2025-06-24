@@ -1,11 +1,11 @@
 import { claudeToolSignatures } from '../../src/claudeTools';
 
 // Mock fetch for HTTP testing
-global.fetch = jest.fn();
+global.fetch = vi.fn();
 
 describe('Tool Workflows Integration Tests', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   describe('Claude Code Tool Discovery', () => {
@@ -170,12 +170,12 @@ describe('Tool Workflows Integration Tests', () => {
 
       const mockVSCode = {
         lm: {
-          registerTool: jest.fn(() => ({
-            dispose: jest.fn(),
+          registerTool: vi.fn(() => ({
+            dispose: vi.fn(),
           })),
         },
-        LanguageModelToolResult: jest.fn(),
-        LanguageModelTextPart: jest.fn(),
+        LanguageModelToolResult: vi.fn(),
+        LanguageModelTextPart: vi.fn(),
       };
 
       // Simulate the tool registration workflow
@@ -188,9 +188,9 @@ describe('Tool Workflows Integration Tests', () => {
             const toolSig = claudeToolSignatures.find(t => t.name === toolName);
             if (toolSig) {
               mockVSCode.lm.registerTool(toolName, {
-                invoke: jest.fn(),
+                invoke: vi.fn(),
               });
-              context.subscriptions.push({ dispose: jest.fn() });
+              context.subscriptions.push({ dispose: vi.fn() });
               registeredTools.push(toolName);
             } else {
               failedTools.push(toolName);
@@ -294,15 +294,15 @@ describe('Tool Workflows Integration Tests', () => {
 
       // Mock Math.random to control error simulation
       const originalRandom = Math.random;
-      Math.random = jest.fn();
+      Math.random = vi.fn();
 
       // Force success
-      (Math.random as jest.Mock).mockReturnValue(0.5);
+      (Math.random as vi.Mock).mockReturnValue(0.5);
       const successResult = await simulateToolInvocationWithErrors('Read', {});
       expect(successResult.content[0].text).toBe('Read executed successfully');
 
       // Force error
-      (Math.random as jest.Mock).mockReturnValue(0.1);
+      (Math.random as vi.Mock).mockReturnValue(0.1);
       await expect(simulateToolInvocationWithErrors('Read', {})).rejects.toThrow(
         'Tool Read execution failed'
       );

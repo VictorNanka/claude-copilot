@@ -1,31 +1,32 @@
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { claudeToolSignatures } from '../../src/claudeTools';
 import * as vscode from 'vscode';
 
 // Use the global VSCode mock (defined in __mocks__/vscode.js)
 // Access the mock for assertions
-const mockVSCode = vscode as jest.Mocked<typeof vscode>;
+const mockVSCode = vscode as vi.Mocked<typeof vscode>;
 
 // Mock the logger module to prevent VS Code dependency issues
-jest.mock('../../src/logger', () => ({
+vi.mock('../../src/logger', () => ({
   logger: {
-    info: jest.fn(),
-    debug: jest.fn(),
-    error: jest.fn(),
+    info: vi.fn(),
+    debug: vi.fn(),
+    error: vi.fn(),
   },
 }));
 
 // Mock the server module to prevent circular dependencies
-jest.mock('../../src/server', () => ({
-  newServer: jest.fn(() => ({
-    start: jest.fn(),
-    stop: jest.fn(),
-    updateConfig: jest.fn(),
+vi.mock('../../src/server', () => ({
+  newServer: vi.fn(() => ({
+    start: vi.fn(),
+    stop: vi.fn(),
+    updateConfig: vi.fn(),
   })),
 }));
 
 // Mock the config module
-jest.mock('../../src/config', () => ({
-  getConfig: jest.fn(() => ({
+vi.mock('../../src/config', () => ({
+  getConfig: vi.fn(() => ({
     port: 59603,
     startAutomatically: true,
     defaultModel: 'gpt-4.1',
@@ -41,14 +42,14 @@ import * as extensionModule from '../../src/extension';
 const { registerToolDynamically, addDiscoveredTool, registerMCPTool, clearDummyRegistry } =
   extensionModule;
 
-// Mock getExtensionContext properly using jest.spyOn
-const mockGetExtensionContext = jest.spyOn(extensionModule, 'getExtensionContext');
+// Mock getExtensionContext properly using vi.spyOn
+const mockGetExtensionContext = vi.spyOn(extensionModule, 'getExtensionContext');
 
 describe('Tool Registration', () => {
   let mockContext: any;
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     mockContext = {
       subscriptions: [],
     };
@@ -223,7 +224,7 @@ describe('Tool Registration', () => {
       },
     };
 
-    const mockMCPCallHandler = jest.fn().mockResolvedValue({
+    const mockMCPCallHandler = vi.fn().mockResolvedValue({
       content: [{ type: 'text', text: 'MCP result' }],
     });
 
@@ -235,7 +236,7 @@ describe('Tool Registration', () => {
 
       // Ensure VSCode mock returns a proper disposable
       mockVSCode.lm.registerTool.mockReturnValue({
-        dispose: jest.fn(),
+        dispose: vi.fn(),
       } as any);
 
       // Make sure the tool is not already registered

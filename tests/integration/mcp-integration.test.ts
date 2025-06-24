@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, jest } from '@jest/globals';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 
 // Interface definitions for type safety
 interface MCPClientConfig {
@@ -37,13 +37,13 @@ interface TestPayload {
 }
 
 // Mock fetch for testing
-global.fetch = jest.fn();
+global.fetch = vi.fn();
 
 describe('MCP Integration Tests', () => {
   let originalFetch: any;
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     originalFetch = global.fetch;
   });
 
@@ -137,7 +137,7 @@ describe('MCP Integration Tests', () => {
         ],
       };
 
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
+      (global.fetch as vi.Mock).mockResolvedValueOnce({
         ok: true,
         json: () => Promise.resolve(mockToolsResponse),
       });
@@ -158,7 +158,7 @@ describe('MCP Integration Tests', () => {
     });
 
     it('should handle server errors gracefully', async () => {
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
+      (global.fetch as vi.Mock).mockResolvedValueOnce({
         ok: false,
         status: 500,
         statusText: 'Internal Server Error',
@@ -176,7 +176,7 @@ describe('MCP Integration Tests', () => {
         ok: true,
         body: {
           getReader: () => ({
-            read: jest
+            read: vi
               .fn()
               .mockResolvedValueOnce({
                 done: false,
@@ -198,7 +198,7 @@ describe('MCP Integration Tests', () => {
         },
       };
 
-      (global.fetch as jest.Mock).mockResolvedValueOnce(mockStreamResponse);
+      (global.fetch as vi.Mock).mockResolvedValueOnce(mockStreamResponse);
 
       const response = await fetch('http://localhost:3000/chat/completions', {
         method: 'POST',
@@ -213,7 +213,7 @@ describe('MCP Integration Tests', () => {
     });
 
     it('should handle tool execution errors', async () => {
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
+      (global.fetch as vi.Mock).mockResolvedValueOnce({
         ok: false,
         status: 400,
         statusText: 'Bad Request',

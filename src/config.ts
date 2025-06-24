@@ -88,11 +88,23 @@ export function isValidPort(port: number): boolean {
  */
 export function getCommonPorts(): number[] {
   return [
-    3000, 3001, 3002, 3003, // Common dev servers
-    4200, 4201, // Angular dev server
-    5000, 5001, 5002, // Various frameworks
-    8000, 8001, 8080, 8081, 8888, // HTTP servers
-    9000, 9001, 9002, // Various tools
+    3000,
+    3001,
+    3002,
+    3003, // Common dev servers
+    4200,
+    4201, // Angular dev server
+    5000,
+    5001,
+    5002, // Various frameworks
+    8000,
+    8001,
+    8080,
+    8081,
+    8888, // HTTP servers
+    9000,
+    9001,
+    9002, // Various tools
   ];
 }
 

@@ -1,25 +1,24 @@
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { getConfig } from '../../src/config';
 
-jest.mock('vscode', () => ({
+vi.mock('vscode', () => ({
   workspace: {
-    getConfiguration: jest.fn(),
+    getConfiguration: vi.fn(),
   },
 }));
 
 import * as vscode from 'vscode';
-const mockGetConfiguration = vscode.workspace.getConfiguration as jest.MockedFunction<
-  typeof vscode.workspace.getConfiguration
->;
+const mockGetConfiguration = vscode.workspace.getConfiguration as ReturnType<typeof vi.fn>;
 
 describe('Config', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   describe('getConfig', () => {
     it('should return default configuration when no settings provided', () => {
       mockGetConfiguration.mockReturnValue({
-        get: jest.fn().mockImplementation((key: string) => {
+        get: vi.fn().mockImplementation((key: string) => {
           const defaults: any = {
             port: 59603,
             startServerAutomatically: true,
@@ -44,7 +43,7 @@ describe('Config', () => {
 
     it('should return custom configuration when settings provided', () => {
       mockGetConfiguration.mockReturnValue({
-        get: jest.fn().mockImplementation((key: string) => {
+        get: vi.fn().mockImplementation((key: string) => {
           const custom: any = {
             port: 8080,
             startServerAutomatically: false,
@@ -77,7 +76,7 @@ describe('Config', () => {
       };
 
       mockGetConfiguration.mockReturnValue({
-        get: jest.fn().mockImplementation((key: string) => {
+        get: vi.fn().mockImplementation((key: string) => {
           if (key === 'mcpClients') {
             return mcpClients;
           }
@@ -92,7 +91,7 @@ describe('Config', () => {
 
     it('should validate system prompt format', () => {
       mockGetConfiguration.mockReturnValue({
-        get: jest.fn().mockImplementation((key: string) => {
+        get: vi.fn().mockImplementation((key: string) => {
           if (key === 'systemPromptFormat') {
             return 'invalid_format';
           }
