@@ -80,15 +80,15 @@ bun run dev             # Development mode (alias for watch)
 **Testing & Quality**
 
 ```bash
-yarn test            # Run E2E tests via VS Code test runner
-yarn test:unit       # Run unit tests with Jest
-yarn test:integration # Run integration tests with Jest
-yarn test:e2e        # Run E2E tests with VS Code test runner
-yarn test:all        # Run all test suites
-yarn test:coverage   # Run tests with coverage report
-yarn pretest         # Run compile + lint before testing
-yarn lint            # ESLint with TypeScript rules
-yarn format          # Format code with Prettier
+bun run test         # Run unit and integration tests with Vitest
+bun run test:unit    # Run unit tests only
+bun run test:integration # Run integration tests only
+bun run test:e2e     # Run E2E tests with VS Code test runner
+bun run test:all     # Run all test suites
+bun run test:coverage # Run tests with coverage report
+bun run pretest      # Run compile + lint before testing
+bun run lint         # ESLint with TypeScript rules
+bun run format       # Format code with Prettier
 ```
 
 **VS Code Extension**
@@ -160,7 +160,7 @@ Configure MCP clients in VS Code settings:
 
 ### Test Framework
 
-- **Jest** - Unit and integration testing with TypeScript support
+- **Vitest** - Unit and integration testing with TypeScript support
 - **VS Code Test Runner** - E2E extension testing
 - **Coverage Threshold** - Minimum thresholds: 20% branches, 25% functions, 30% lines/statements
 - **Pre-commit Hooks** - Automatic linting, formatting, and quality checks via Husky
@@ -189,13 +189,13 @@ Configure MCP clients in VS Code settings:
 ### Test Commands
 
 ```bash
-yarn test:unit            # Unit tests
-yarn test:integration     # Integration tests
-yarn test:e2e            # E2E tests
-yarn test:all             # Run all test suites
-yarn test:coverage        # Tests with coverage
-yarn test:watch           # Watch mode for tests
-yarn lint                 # Code linting
-yarn format               # Code formatting
-yarn format:check         # Check code formatting
+bun run test:unit         # Unit tests
+bun run test:integration  # Integration tests
+bun run test:e2e         # E2E tests
+bun run test:all          # Run all test suites
+bun run test:coverage     # Tests with coverage
+bun run test:watch        # Watch mode for tests
+bun run lint              # Code linting
+bun run format            # Code formatting
+bun run format:check      # Check code formatting
 ```
