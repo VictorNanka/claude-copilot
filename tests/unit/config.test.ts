@@ -1,11 +1,22 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { getConfig } from '../../src/config';
+
+// Mock the logging utilities first
+vi.mock('../../src/utils/logging', () => ({
+  configLogger: {
+    debug: vi.fn(),
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+  },
+}));
 
 vi.mock('vscode', () => ({
   workspace: {
     getConfiguration: vi.fn(),
   },
 }));
+
+import { getConfig } from '../../src/config';
 
 import * as vscode from 'vscode';
 const mockGetConfiguration = vscode.workspace.getConfiguration as ReturnType<typeof vi.fn>;

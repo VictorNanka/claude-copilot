@@ -20,6 +20,20 @@ vi.mock('../../src/logger', () => ({
     info: vi.fn(),
     error: vi.fn(),
     debug: vi.fn(),
+    warn: vi.fn(),
+  },
+}));
+
+// Mock the new logging utilities
+vi.mock('../../src/utils/logging', () => ({
+  LoggingUtils: {
+    logTiming: vi.fn((name, fn) => fn()),
+  },
+  mcpLogger: {
+    info: vi.fn(),
+    error: vi.fn(),
+    debug: vi.fn(),
+    warn: vi.fn(),
   },
 }));
 
@@ -76,15 +90,17 @@ describe('MCPManager', () => {
       mockClient.connect.mockRejectedValue(new Error('Connection failed'));
 
       await expect(mcpManager.addClient('filesystem', testConfig)).rejects.toThrow(
-        'Connection failed'
+        'Failed to connect MCP client'
       );
     });
 
-    it('should handle tools loading failure gracefully', async () => {
+    it('should handle tools loading failure', async () => {
       mockClient.request.mockRejectedValue(new Error('Tools request failed'));
 
-      // Should not throw, just log error
-      await expect(mcpManager.addClient('filesystem', testConfig)).resolves.toBeUndefined();
+      // Now throws MCPError due to enhanced error handling
+      await expect(mcpManager.addClient('filesystem', testConfig)).rejects.toThrow(
+        'Failed to connect MCP client'
+      );
       expect(mockClient.connect).toHaveBeenCalled();
     });
 
@@ -187,7 +203,7 @@ describe('MCPManager', () => {
       mockClient.request.mockRejectedValue(new Error('Tool execution failed'));
 
       await expect(mcpManager.callTool('filesystem:list_files', {})).rejects.toThrow(
-        'Tool execution failed'
+        'Tool call failed for'
       );
     });
   });
