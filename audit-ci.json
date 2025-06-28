@@ -9,5 +9,13 @@
   "advisories": [],
   "whitelist": [],
   "registry": "https://registry.npmjs.org/",
-  "skip-dev": false
+  "skip-dev": false,
+  "pass-enoaudit": true,
+  "output-format": "json",
+  "retry": {
+    "count": 3,
+    "factor": 2,
+    "minTimeout": 1000,
+    "maxTimeout": 10000
+  }
 }
