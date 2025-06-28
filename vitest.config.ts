@@ -1,6 +1,6 @@
 /// <reference types="vitest" />
-import { defineConfig } from 'vitest/config'
-import path from 'path'
+import { defineConfig } from 'vitest/config';
+import path from 'path';
 
 export default defineConfig({
   test: {
@@ -12,6 +12,7 @@ export default defineConfig({
     testTimeout: 10000,
     alias: {
       vscode: path.resolve(__dirname, '__mocks__/vscode.ts'),
+      'src/utils/logging': path.resolve(__dirname, '__mocks__/src/utils/logging.ts'),
     },
     coverage: {
       provider: 'v8',
@@ -22,8 +23,8 @@ export default defineConfig({
         branches: 20,
         functions: 25,
         lines: 30,
-        statements: 30
-      }
-    }
-  }
-})
+        statements: 30,
+      },
+    },
+  },
+});

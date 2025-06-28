@@ -1,14 +1,26 @@
-import * as vscode from 'vscode';
+/**
+ * Legacy logger for backward compatibility
+ * @deprecated Use the new centralized logging system from ./utils/logging.ts
+ */
 
-import * as winston from 'winston';
-import { OutputChannelTransport } from 'winston-transport-vscode';
+import { logger as centralizedLogger } from './utils/logging';
 
-export const logger = winston.createLogger({
-  level: 'debug',
-  format: winston.format.combine(winston.format.timestamp(), winston.format.json()),
-  transports: [
-    new OutputChannelTransport({
-      outputChannel: vscode.window.createOutputChannel('LM API proxy'),
-    }),
-  ],
-});
+// Export the centralized logger for backward compatibility
+export const logger = {
+  error: (message: string, meta?: unknown) => {
+    if (meta) {
+      centralizedLogger.error(message, meta, { component: 'legacy' });
+    } else {
+      centralizedLogger.error(message, undefined, { component: 'legacy' });
+    }
+  },
+  warn: (message: string, meta?: unknown) => {
+    centralizedLogger.warn(message, { component: 'legacy', meta });
+  },
+  info: (message: string, meta?: unknown) => {
+    centralizedLogger.info(message, { component: 'legacy', meta });
+  },
+  debug: (message: string, meta?: unknown) => {
+    centralizedLogger.debug(message, { component: 'legacy', meta });
+  },
+};

@@ -6,10 +6,16 @@ const mockVSCode = {
   window: {
     createOutputChannel: vi.fn(() => ({
       appendLine: vi.fn(),
+      append: vi.fn(),
+      clear: vi.fn(),
       show: vi.fn(),
+      hide: vi.fn(),
+      dispose: vi.fn(),
+      name: 'mock-output-channel',
     })),
     showInformationMessage: vi.fn(),
     showErrorMessage: vi.fn(),
+    showWarningMessage: vi.fn(),
     showQuickPick: vi.fn(),
   },
   workspace: {
